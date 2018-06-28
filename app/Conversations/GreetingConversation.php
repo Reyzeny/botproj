@@ -9,6 +9,7 @@ use BotMan\BotMan\Messages\Outgoing\Actions\Button;
 use BotMan\BotMan\Messages\Conversations\Conversation;
 use App\Http\Controllers\BotManController;
 use App\User;
+use App\UserData;
 
 class GreetingConversation extends Conversation
 {
@@ -22,6 +23,7 @@ class GreetingConversation extends Conversation
     }
 
     public function greetUser() {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"greeting"]);
         $name = $this->user->get_name($this->user_id);
         $greeting_array = array(
             "Hello ","Hey ", "What's up ", "Welcome ", "Hi ", "Good day ", "Howdy ", "Holla ", "Xup Xup ", "Sup "

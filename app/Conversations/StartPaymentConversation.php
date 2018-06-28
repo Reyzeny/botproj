@@ -12,9 +12,9 @@ use App\UserData;
 
 class StartPaymentConversation extends Conversation
 {
-    protected $user_id;
-    protected $test_id;
-    protected $author_id;
+    private $user_id;
+    private $test_id;
+    private $author_id;
 
     public function set_user_id($user_id) {
         $this->user_id = $user_id;
@@ -25,39 +25,27 @@ class StartPaymentConversation extends Conversation
     public function set_author_id($author_id) {
         $this->author_id = $author_id;
     }
-    public function get_user_id() {
-        return $this->user_id;
-    }
-    public function get_test_id() {
-        return $this->test_id;
-    }
-    public function get_author_id() {
-        return $this->author_id;
-    }
     
     
 
     public function check_for_payment() {
-        echo "test id is ".$this->test_id;
-        echo "user id is ".$this->user_id;
-        echo "author_id is ".$this->author_id;
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"payment"]);
         if (!$this->test_is_paid()) {
             $start_test_convo = new StartTestConversation();
             $start_test_convo->set_user_id($this->user_id);
             $start_test_convo->set_test_id($this->test_id);
             $start_test_convo->set_author_id($this->author_id);
-            UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_started"]);
+            UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_start"]);
             $this->bot->startConversation($start_test_convo);
             return;
         }
         if ($this->test_is_paid() && $user->has_paid($this->user_id)) {
-            
+            $this->bot->reply('This test is a paid test, would you like continue with payment?');
         }
         
     }
 
     public function test_is_paid() {
-        echo "test id is ".$this->test_id;
         return Test::find($this->test_id)->paid == 'yes';
     }
 

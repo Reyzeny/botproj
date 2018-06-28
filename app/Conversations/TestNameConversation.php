@@ -27,10 +27,12 @@ class TestNameConversation extends Conversation
      */
 
     public function askTestName() {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
         $question = $this->get_what_test();
         $this->say($question);
     }
     public function confirm_testname($test_title, $bot) {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
         $this->bot = $bot;
         $test = $this->get_available_test();
         if (preg_match($test, $test_title)) {

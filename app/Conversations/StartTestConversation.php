@@ -1,5 +1,12 @@
 <?php
 
+/*
+This class consist of three contexts
+    test_Started
+    test_on
+    test_finished
+*/
+
 namespace App\Conversations;
 
 use Illuminate\Foundation\Inspiring;
@@ -10,6 +17,8 @@ use BotMan\BotMan\Messages\Conversations\Conversation;
 use Illuminate\Support\Facades\DB;
 use App\Test;
 use App\UserData;
+use App\User;
+use App\Author;
 
 class StartTestConversation extends Conversation
 {
@@ -31,9 +40,12 @@ class StartTestConversation extends Conversation
     }
     public function set_test_id($test_id) {
         $this->test_id = $test_id;
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["test_id"=>$this->test_id]);
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["test_name"=>Test::find($this->test_id)->title]);
     }
     public function set_author_id($author_id) {
         $this->author_id = $author_id;
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["test_by_author_id"=>$this->author_id]);
     }
     
 
@@ -42,12 +54,15 @@ class StartTestConversation extends Conversation
      */
 
     public function showTestDetails() {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_start"]);
         $take_test = "Take test<br><br>";
-        $test_name = "Test name : Unilag Maths<br><br>";
-        $author_name = "Author : Pelumi<br><br>";
-        $time = "Time : 20mins<br><br>";
+        $test_name = "Test name : ".ucwords(Test::find($this->test_id)->title)."<br><br>";
+        $author_name = "Author : ".ucwords(Author::find($this->author_id)->author_name)."<br><br>";
+        $time = "Time : ".Test::find($this->test_id)->duration." minutes<br><br>";
+        $instruction1 = "Type 'quit test' to end this test at any time<br>";
+        $instruction2 = "Click the start button or type start to begin the test<br>";
 
-        $display_text = $take_test.$test_name.$author_name.$time;
+        $display_text = $take_test.$test_name.$author_name.$time.$instruction1.$instruction2;
 
         $question = Question::create($display_text)
             ->fallback('Unable to ask question')
@@ -55,13 +70,17 @@ class StartTestConversation extends Conversation
             ->addButtons([
                 Button::create('Start')->value('Start')
         ]);
+        $this->say($question);
+    }
 
-        return $this->ask($question, function (Answer $answer) {
-            if (strtolower($answer->getText())=='start') {
-                $this->loadQuestions();
-                $this->displayQuestion();
-            }
-        });
+    public function startTest($bot) {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_start"]);
+        $this->bot = $bot;
+        $this->test_id = DB::table('user_datas')->where('user_id', $this->user_id)->value('test_id');
+        $this->author_id = DB::table('user_datas')->where('user_id', $this->user_id)->value('test_by_author_id');
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_on"]);
+        $this->loadQuestions();
+        $this->displayQuestion();
     }
 
     public function loadQuestions() {
@@ -71,27 +90,13 @@ class StartTestConversation extends Conversation
         $this->user_selected_answer = array();
         $this->correct_selections = array();
         $this->incorrect_selections = array();
+
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["question"=>serialize($this->questions_array)]);
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["options"=>serialize($this->options_array)]);
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["question_answers"=>serialize($this->answers_array)]);
     }
 
     public function displayQuestion($count=0, $score=0) {
-        //var_dump($options_array);
-        // while (self::$count <= 20) {
-        //     $option_button_array = $this->get_option_button_array($options_array[self::$count]);
-        //     $question = Question::create($questions_array[self::$count]->question)
-        //         ->fallback('Unable to ask question')
-        //         ->callbackId('ask_reason')
-        //         ->addButtons($option_button_array);
-
-        //     $this->ask('Hello! What is your firstname?', function(Answer $answer) {
-        //         // Save result
-        //         $this->firstname = $answer->getText();
-
-        //         $this->say('Nice to meet you '.$this->firstname);
-        //         
-        //     });    
-        //     self::$count++;
-        // }
-        //var_dump($this->questions_array);
 
         if ($count < sizeof($this->questions_array)) {
             $option_button_array = $this->get_option_button_array($this->options_array[$count]);
@@ -101,8 +106,13 @@ class StartTestConversation extends Conversation
                 ->addButtons($option_button_array);
 
             $this->ask($question, function(Answer $answer) use($count, $score){
+                if (strtolower($answer)=='quit test') {
+                    $this->proceedOnTestFinished($score);
+                    return;
+                }
                 if (!$answer->isInteractiveMessageReply()) {
                     $this->user_selected_answer[$count] = $answer->getText();
+                    UserData::updateOrCreate(["user_id"=>$this->user_id], ["user_selected_answers"=>serialize($this->user_selected_answer)]);
                     $score = $this->verifyAnswer($count, $score);
                     $this->say("Ok");
                     $count++;
@@ -112,10 +122,10 @@ class StartTestConversation extends Conversation
                 $this->say("Don't type the answer, select from the options");
                 $this->displayQuestion($count);
                 
-            });    
+            }, ['timer_action'=>'start_time']);    
         }
         else {
-            $this->proceedOnTestCompletion($score);
+            $this->proceedOnTestFinished($score);
         }
     }
 
@@ -153,8 +163,6 @@ class StartTestConversation extends Conversation
     }
 
     public function verifyAnswer($count, $score) {
-        //var_dump($this->answers_array[$count][0]->option_text);
-        //var_dump($this->user_selected_answer[$count]);
         if ($this->answers_array[$count][0]->option_text==$this->user_selected_answer[$count]) {
             array_push($this->correct_selections, $count);
             $score++;
@@ -165,7 +173,8 @@ class StartTestConversation extends Conversation
         return $score;
     }
 
-    public function proceedOnTestCompletion($score) {
+    public function proceedOnTestFinished($score) {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_finished"]);
         $question = Question::create("Test completed! Your score is ".$score)
                         ->fallback('Unable to ask question')
                         ->callbackId(4)
@@ -174,20 +183,30 @@ class StartTestConversation extends Conversation
                             Button::create('Proceed')->value('Proceed')
                         ]);
 
-        $this->ask($question, [
-                [
-                    'pattern' => 'View corrections|correction',
-                    'callback' => function () {
-                        $this->displayCorrectionExplanation();
-                    }
-                ],
-                [
-                    'pattern' => 'Proceed',
-                    'callback' => function () {
-                        $this->bot->startConversation(new TestCompletionConversation($this->user_id, $this->test_id, $this->author_id));
-                    }
-                ]
-            ]); 
+        $this->say($question); 
+    }
+
+    public function confirm_test_finished_response($response, $bot){
+        $this->bot = $bot;
+        if (preg_match("[view corrections]", strtolower($response))) {
+            $this->questions_array = unserialize(DB::table('user_datas')->where('user_id', $this->user_id)->value('question'));
+            $this->options = unserialize(DB::table('user_datas')->where('user_id', $this->user_id)->value('options'));
+            $this->answers_array = unserialize(DB::table('user_datas')->where('user_id', $this->user_id)->value('question_answers'));
+            $this->user_selected_answer = unserialize(DB::table('user_datas')->where('user_id', $this->user_id)->value('user_selected_answers'));
+            $this->displayCorrectionExplanation();
+        }
+        elseif (preg_match("[proceed|end]", strtolower($response))) {
+            $this->test_id = DB::table('user_datas')->where('user_id', $this->user_id)->value('test_id');
+            $this->author_id = DB::table('user_datas')->where('user_id', $this->user_id)->value('test_by_author_id');
+            $test_completion_convo = new TestCompletionConversation();
+            $test_completion_convo->set_user_id($this->user_id);
+            $test_completion_convo->set_test_id($this->test_id);
+            $test_completion_convo->set_author_id($this->author_id);
+            $this->bot->startConversation($test_completion_convo);
+        }
+        else{
+            $this->bot->reply("Type 'end' to end the session");
+        }
     }
 
     public function displayCorrectionExplanation($pagecount=0) {
@@ -195,11 +214,16 @@ class StartTestConversation extends Conversation
         $pagecount++; 
         $page_record = $fragments * $pagecount;
         $start = $page_record - $fragments;
-        if ($page_record < sizeof($this->questions_array)) {
+        if ($page_record <= sizeof($this->questions_array)) {
             for ($i=$start; $i < $page_record; $i++) {
                 $display_text = ($i+1).". ".$this->questions_array[$i]->question;
                 $display_text.="<br><br>";
-                $display_text.="Your answer : ".$this->user_selected_answer[$i];
+                if (array_key_exists($i, $this->user_selected_answer)) {
+                    $display_text.="Your answer : ".$this->user_selected_answer[$i];    
+                }else{
+                    $this->user_selected_answer[$i] = "";
+                    $display_text.="Your answer : ".$this->user_selected_answer[$i];
+                }
                 $display_text.="<br>";
                 $display_text.="Correct answer : ".$this->answers_array[$i][0]->option_text;
 
@@ -209,21 +233,21 @@ class StartTestConversation extends Conversation
                     ->fallback('Unable to ask question')
                     ->callbackId(4)
                     ->addButtons([
-                        Button::create('More')->value('More'),
-                        Button::create('End')->value('End')
+                        Button::create('More')->value('more'),
+                        Button::create('End')->value('end')
                     ]);
 
                 $this->ask($question, [
                     [
-                        'pattern' => 'More',
+                        'pattern' => 'more',
                         'callback' => function () use($pagecount) {
                             $this->displayCorrectionExplanation($pagecount);
                         }
                     ],
                     [
-                        'pattern' => 'End',
+                        'pattern' => 'end',
                         'callback' => function () {
-                            $this->bot->startConversation(new TestCompletionConversation($this->user_id, $this->test_id, $this->author_id));
+                            $this->confirm_test_finished_response("proceed", $this->bot);
                         }
                     ]
                 ]);   
@@ -231,7 +255,7 @@ class StartTestConversation extends Conversation
             return;
         }
         $this->say('That\'s the end actually');
-        $this->bot->startConversation(new TestCompletionConversation($this->user_id, $this->test_id, $this->author_id));
+        $this->confirm_test_finished_response("proceed", $this->bot);
     }
 
     /**

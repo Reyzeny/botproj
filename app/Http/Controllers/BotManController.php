@@ -63,7 +63,7 @@ class BotManController extends Controller
 
         
         $this->botman->fallback(function($bot) use($request) {
-            self::fallback_reply($bot, $request->userId, $bot->getMessage()->getText());    
+            self::fallback_reply($bot, $request->userId, strtolower($bot->getMessage()->getText()));    
         });
 
         $this->botman->listen();        
@@ -128,7 +128,7 @@ class BotManController extends Controller
 
 
 
-    public function get_random_fallback_reply() {
+    public static function get_random_fallback_reply() {
         $reply_array = array(
             "I don't understand that",
             "What do you mean "
@@ -158,9 +158,9 @@ class BotManController extends Controller
     
 
     public static function fallback_reply(BotMan $bot, $user_id, $unknown_word="") {
-        $user_data = new UserData();
         $result = DB::select('select context from user_datas where user_id=?', [$user_id]);
         $context = $result[0]->context;
+        $unknown_word==strtolower($unknown_word);
         
         if ($context=='email') {
             if (!empty($unknown_word)) {
@@ -204,7 +204,7 @@ class BotManController extends Controller
                 $test_selection = new TestSelectionConversation();
                 $test_selection->set_user_id($user_id);
                 $test_selection->set_test_entered($unknown_word);
-                $test_selection->showSuggestion($bot);
+                $test_selection->confirm_suggestion_selection($unknown_word, $bot);
                 return;
             }
             $reply = self::get_random_testtitle_fallback_reply();
@@ -221,9 +221,41 @@ class BotManController extends Controller
         //     $reply = self::get_random_testtitle_fallback_reply();
         //     $bot->reply($reply);
         // }
+        else if ($context=='test_start') {
+            if (!empty($unknown_word)) {
+                if ($unknown_word=='start') {
+                    $start_test_convo = new StartTestConversation();
+                    $start_test_convo->set_user_id($user_id);
+                    $start_test_convo->startTest($bot);
+
+                }
+                return;
+            }
+            
+        }
+        else if ($context=='test_finished') {
+            if (!empty($unknown_word)) {
+                $start_test_convo = new StartTestConversation();
+                $start_test_convo->set_user_id($user_id);
+                $start_test_convo->confirm_test_finished_response($unknown_word, $bot);
+                return;
+            }
+            //$reply = self::get_random_testtitle_fallback_reply();
+            //$bot->reply($reply);
+        }
+        else if ($context=='test_completed') {
+            if (!empty($unknown_word)) {
+                $test_completion_conv = new TestCompletionConversation();
+                $test_completion_conv->set_user_id($user_id);
+                $test_completion_conv->test_completion_response($unknown_word, $bot);
+                return;
+            }
+            //$reply = self::get_random_testtitle_fallback_reply();
+            //$bot->reply($reply);
+        }
         else
         {
-            $reply = $this->get_random_fallback_reply();
+            $reply = self::get_random_fallback_reply();
             $bot->reply($reply);
         }
     }

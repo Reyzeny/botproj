@@ -65,7 +65,7 @@ class User extends Authenticatable
         if (empty($firstname)) {
             $firstname = "friend";
         }
-        return $firstname;
+        return ucwords($firstname);
     }
 
     public function getByUniqueId($userId) {

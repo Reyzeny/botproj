@@ -40,7 +40,7 @@ class PersonalInformationConversation extends Conversation
             $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
             $this->bot->reply($reply);
             $this->askForEmail();
-            UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"email"]);
+            
 
             // $user_data->user_id = $this->user_id;
             // $user_data->context = 'email';
@@ -50,13 +50,12 @@ class PersonalInformationConversation extends Conversation
             $reply = "Dear friend, i haven't known you pretty well. Let me know you better";
             $this->say($reply);
             $this->askForEmail();
-            UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"email"]);
         }
         else if (!$user->firstname_exists($this->user_id)) {
             $reply = "Dear friend, i haven't known you pretty well. Let me know you better";
             $this->say($reply);
             $this->askForFirstname();
-            UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"firstname"]);
+            
         }
         else if (!$user->lastname_exists($this->user_id)) {
             $reply = "Dear friend, i haven't known you pretty well. Let me know you better";
@@ -66,7 +65,7 @@ class PersonalInformationConversation extends Conversation
         }
         else {
             $test_name_convo = new TestNameConversation();
-            $test_name_convo->set_user_id = $this->user_id;
+            $test_name_convo->set_user_id($this->user_id);
             UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
             $this->bot->startConversation($test_name_convo);
         }
@@ -80,6 +79,7 @@ class PersonalInformationConversation extends Conversation
 /* ----------------------------------Relating to Email - Begin ----------------------------------------------- */
 
     public function askForEmail() {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"email"]);
         $user = new User();
         if (!$user->email_exists($this->user_id)) {
             $this->request_mail();
@@ -89,6 +89,7 @@ class PersonalInformationConversation extends Conversation
     }
 
     public function request_mail() {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"email"]);
         $question = $this->get_email_question();
         $this->ask($question, function(Answer $answer) {
                 $this->confirm_email($answer, $this->bot);
@@ -96,11 +97,11 @@ class PersonalInformationConversation extends Conversation
     }
 
     public function confirm_email($email, $bot) {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"email"]);
         $this->bot = $bot;
         if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
             User::updateOrCreate(["user_id"=>$this->user_id], ["email"=>$email]);
             $this->say('Okay');
-            UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"firstname"]);
             $this->askForFirstname();
             return true;
         }
@@ -130,6 +131,7 @@ class PersonalInformationConversation extends Conversation
 /* ----------------------------------Relating to Name - Begin -------------------------------------------------------- */
 
     public function askForFirstname() {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"firstname"]);
         $user = new User();
         if (!$user->firstname_exists($this->user_id)) {
             $question = $this->get_firstname_question();
@@ -139,15 +141,16 @@ class PersonalInformationConversation extends Conversation
         $this->askForLastname();
     }
     public function confirm_firstname($name, $bot) {
+         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"firstname"]);
         $this->bot = $bot;
         User::updateOrCreate(["user_id"=>$this->user_id], ["firstname"=>$name]);
         $this->say('Cool');
-        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"lastname"]);
         $this->askForLastname();
     }
 
 
     public function askForLastname() {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"lastname"]);
         $user = new User();
         if (!$user->lastname_exists($this->user_id)) {
             $question = $this->get_lastname_question();
@@ -155,17 +158,16 @@ class PersonalInformationConversation extends Conversation
             return;
         }
         $test_name_convo = new TestNameConversation();
-        $test_name_convo->set_user_id = $this->user_id;
-        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
+        $test_name_convo->set_user_id($this->user_id);
         $this->bot->startConversation($test_name_convo);
     }
     public function confirm_lastname($name, $bot) {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"lastname"]);
         $this->bot = $bot;
         User::updateOrCreate(["user_id"=>$this->user_id], ["lastname"=>$name]);
         $this->say('Noted');
         $test_name_convo = new TestNameConversation();
-        $test_name_convo->set_user_id = $this->user_id;
-        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
+        $test_name_convo->set_user_id($this->user_id);
         $this->bot->startConversation($test_name_convo);
     }
 

@@ -15,11 +15,12 @@
 		<div class="top_menu">
 			<div class="buttons">
 				<img src="{{ asset('images/simbibot-icon.png') }}" width="60">
-				{{-- <div class="button close"></div>
-				<div class="button minimize"></div>
-				<div class="button maximize"></div> --}}
+				
 			</div>
 			<div class="title"><img src="{{ asset('images/simbibot-favicon.png') }}" style="width:20px; height: 20px">SimbiLearn</div>
+			<div class="timer">
+				<p>Time</p>
+			</div>
 		</div>
 		<ul class="messages">
 			
@@ -137,12 +138,14 @@
 					message: newMessage.text,
 					additionalParameters: this.additionalParameters}
 					).then(function(response){
+						console.log(response);
 					let messages = response.data.messages || [];
 					
 					messages.forEach(msg => {
 						let message_object = {text: msg.text, attachment: msg.attachment, type: msg.type, bysimbi: true, time: msg.time, actions: msg.actions};
 						that.messages.push(message_object);
 						that.storeMessage(message_object);
+
 					});
 					that.additionalParameters = [];
 					let $message = $($('.message_template').clone().html());

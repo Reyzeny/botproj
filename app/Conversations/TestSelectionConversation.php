@@ -26,29 +26,23 @@ class TestSelectionConversation extends Conversation
     /**
      * First question
      */
-    public function showSuggestion($bot) {
-        $this->bot = $bot;
+    public function showSuggestion() {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_selection"]);
         $test_entered = $this->test_entered;
         $result = DB::select("select * from tests where title like '%$test_entered%'");
-        //echo "$test_entered";
-        //var_dump($result);
         $question = $this->get_selection_question($result);
-        $this->ask($question, function(Answer $answer) {
-            $data = $this->analyze_text($answer);
-            $startPaymentConvo = new StartPaymentConversation();
-            $startPaymentConvo->set_user_id = $this->user_id;
-            $startPaymentConvo->set_test_id = $data['test_id'];
-            $startPaymentConvo->set_author_id = $data['author_id'];
-            UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"payment"]);
-            var_dump($startPaymentConvo);
-            echo "user id ".$this->user_id;
-            echo "test id is ".$data['test_id'];
-            echo "author id is ".$data['author_id'];
-            echo "start payment user id is ".$startPaymentConvo->get_user_id();
-            echo "start payment test id is ".$startPaymentConvo->get_test_id();
-            echo "start payment author id is ".$startPaymentConvo->get_author_id();
-            $this->bot->startConversation($startPaymentConvo);
-        });
+        $this->say($question);
+    }
+
+    public function confirm_suggestion_selection($selection, $bot) {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_selection"]);
+        $data = $this->analyze_text($selection);
+        $startPaymentConvo = new StartPaymentConversation();
+        $startPaymentConvo->set_user_id($this->user_id);
+        $startPaymentConvo->set_test_id($data['test_id']);
+        $startPaymentConvo->set_author_id($data['author_id']);
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"payment"]);
+        $bot->startConversation($startPaymentConvo);
     }
 
     public function analyze_text($answer) {
@@ -99,6 +93,6 @@ class TestSelectionConversation extends Conversation
      */
     public function run()
     {
-        $this->showSuggestion($this->bot);
+        $this->showSuggestion();
     }
 }
