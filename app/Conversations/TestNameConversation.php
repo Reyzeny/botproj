@@ -49,6 +49,29 @@ class TestNameConversation extends Conversation
         // }
         BotManController::fallback_reply($bot, $this->user_id);
     }
+    public function confirm_authorname($author_name, $bot) {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
+        $this->bot = $bot;
+        $author_id_array = array();
+        $author_list = Author::all();
+        foreach ($author_list as $author) {
+            if ( strpos($author_list->author_name, $author_name) || strpos($author_name, $author_list->author_name) ) {
+                array_push($author_id_array, $author_list->id);
+            }
+        }
+        // if (!$suggestion=get_closer_keyword($test_title)) {
+
+        // }
+        if (empty($author_id_array)) {
+            BotManController::fallback_reply($bot, $this->user_id); 
+            return;   
+        }
+
+        $test_selection = new TestSelectionConversation();
+        $test_selection->set_user_id($this->user_id);
+        $test_selection->set_author_id_entered($author_id_array);
+        $test_selection->showAuthorSuggestion();
+    }
 
     public function get_what_test() {
         $test_list = Test::select('title')->distinct()->get();
@@ -86,6 +109,19 @@ class TestNameConversation extends Conversation
         }
         $text.="]";
         return $text;
+    }
+
+    public function show_all_test_list($bot) {
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
+        $this->bot = $bot;
+        $test_list = Test::select('title')->distinct()->get();
+
+        $response = "I have <br><br>";
+        foreach ($test_list as $test) {
+            $response .= $test->title."<br>";
+        }
+        $response .= "<br>Which would you like to take?";
+        $this->bot->reply($response);
     }
 
     /**

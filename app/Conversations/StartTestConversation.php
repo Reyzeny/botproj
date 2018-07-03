@@ -183,7 +183,7 @@ class StartTestConversation extends Conversation
                             Button::create('Proceed')->value('Proceed')
                         ]);
 
-        $this->say($question); 
+        $this->say($question, ['timer_action'=>'stop_time']); 
     }
 
     public function confirm_test_finished_response($response, $bot){

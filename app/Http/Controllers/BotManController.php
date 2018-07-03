@@ -16,6 +16,7 @@ use App\Conversations\TestSelectionConversation;
 use App\Conversations\StartPaymentConversation;
 use App\Conversations\StartTestConversation;
 use App\Conversations\TestCompletionConversation;
+use App\Conversations\PaymentOptionConversation;
 
 class BotManController extends Controller
 {
@@ -32,34 +33,95 @@ class BotManController extends Controller
         }
         /*End of This place */
 
-        
-
         $greeting_keywords = $this->get_greeting_keywords();
         $this->botman->hears($greeting_keywords, function($bot) use($request){
             $this->matches_greeting($bot, $request);
         });
 
-        $this->botman->hears('my email is {mail}', function($bot, $mail) use($request){
-            $pic = new PersonalInformationConversation();
-            $pic->set_user_id($request->userId);
-            $pic->confirm_email($mail, $bot);
-        });
+        // $this->botman->hears('my email is {mail}', function($bot, $mail) use($request){
+        //     $pic = new PersonalInformationConversation();
+        //     $pic->set_user_id($request->userId);
+        //     $pic->confirm_email($mail, $bot);
+        // });
        
-        // $dialogflow = ApiAi::create('10b0f73b619b449b84c8ba0c025bac59')->listenForAction();
-        // $botman->middleware->received($dialogflow);
+        $dialogflow = ApiAi::create('3353f8816a3748afa3380c2dc5a1ea7b')->listenForAction();
+        $this->botman->middleware->received($dialogflow);
+        $this->botman->hears('test_available', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            $apiAction = $extras['apiAction'];
+            $apiIntent = $extras['apiIntent'];
+            $apiParameters = $extras['apiParameters'];
+            //$bot->reply($api_reply);
+            $testnameconvo = new TestNameConversation();
+            $testnameconvo->set_user_id($request->userId);
+            $testnameconvo->show_all_test_list($bot);
+        })->middleware($dialogflow);
+        $this->botman->hears('test_name', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            $apiAction = $extras['apiAction'];
+            $apiIntent = $extras['apiIntent'];
+            $apiParameters = $extras['apiParameters'];
 
-        // $botman->hears('my_api_action', function (BotMan $bot) {
-        //     // The incoming message matched the "my_api_action" on Dialogflow
-        //     // Retrieve Dialogflow information:
+            if (DB::table('user_datas')->where('user_id', $request->userId)->value('context')=='test_selection') {
+                self::fallback_reply($bot, $request->userId, $bot->getMessage()->getText());
+                return;
+            }
+
+            if (isset($apiParameters['test_name']) && isset($apiParameters['author_name'])) {
+                  $test_selection = new TestSelectionConversation();
+                  $test_selection->set_user_id($request->userId);
+                  $test_selection->confirm_full_text_entry(strtolower($apiParameters['test_name']), strtolower($apiParameters['author_name']), $bot);
+            }
+            elseif (isset($apiParameters['test_name']) && !isset($apiParameters['author_name'])) {
+                $testnameconvo = new TestNameConversation();
+                $testnameconvo->set_user_id($request->userId);
+                $testnameconvo->confirm_testname($apiParameters['test_name'], $bot);    
+            }
+            elseif (!isset($apiParameters['test_name']) && isset($apiParameters['author_name'])) {
+                $testnameconvo = new TestNameConversation();
+                $testnameconvo->set_user_id($request->userId);
+                $testnameconvo->confirm_testname($apiParameters['author_name'], $bot);
+            }
+            
+        })->middleware($dialogflow);
+        // $this->botman->hears('author_name', function (BotMan $bot) use($request){
         //     $extras = $bot->getMessage()->getExtras();
         //     $apiReply = $extras['apiReply'];
         //     $apiAction = $extras['apiAction'];
         //     $apiIntent = $extras['apiIntent'];
-
-
+        //     $apiParameters = $extras['apiParameters'];
             
-        //     $bot->reply("this is my reply");
+            
+            
         // })->middleware($dialogflow);
+        $this->botman->hears('well_being', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            $bot->reply($apiReply);
+            $pic = new PersonalInformationConversation();
+            $pic->set_user_id($request->userId);
+            $bot->startConversation($pic); 
+        })->middleware($dialogflow);
+        $this->botman->hears('name_question', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            $bot->reply($apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('matches_lovely_question', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            $bot->reply($apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('unsure_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            $bot->reply($apiReply); 
+        })->middleware($dialogflow);
+
+
+
 
         
         $this->botman->fallback(function($bot) use($request) {
@@ -210,17 +272,26 @@ class BotManController extends Controller
             $reply = self::get_random_testtitle_fallback_reply();
             $bot->reply($reply);
         }
-        // else if ($context=='payment') {
-        //     if (!empty($unknown_word)) {
-        //         $test_selection = new TestSelectionConversation();
-        //         $test_selection->set_user_id($this->user_id);
-        //         $test_selection->set_test_entered($test_title);
-        //         $test_selection->showSuggestion();
-        //         return;
-        //     }
-        //     $reply = self::get_random_testtitle_fallback_reply();
-        //     $bot->reply($reply);
-        // }
+        else if ($context=='payment') {
+            if (!empty($unknown_word)) {
+                $StartPaymentConversation = new StartPaymentConversation();
+                $StartPaymentConversation->set_user_id($user_id);
+                $StartPaymentConversation->confirm_payment($user_id, $bot, $unknown_word);
+                return;
+            }
+            $reply = self::get_random_testtitle_fallback_reply();
+            $bot->reply($reply);
+        }
+        else if ($context=='payment_option') {
+            if (!empty($unknown_word)) {
+                $payment_option_convo = new PaymentOptionConversation();
+                $payment_option_convo->set_user_id($user_id);
+                $payment_option_convo->confirm_payment_option($user_id, $bot, $unknown_word);
+                return;
+            }
+            $reply = self::get_random_testtitle_fallback_reply();
+            $bot->reply($reply);
+        }
         else if ($context=='test_start') {
             if (!empty($unknown_word)) {
                 if ($unknown_word=='start') {

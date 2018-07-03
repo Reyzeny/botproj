@@ -7,6 +7,8 @@
 	<link rel="stylesheet" type="text/css" href="{{ asset('css/chat-dialog.css') }}">
 	<link rel="stylesheet" type="text/css" href="{{ asset('css/app.css') }}">
 	<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
 </head>
 <body>
 
@@ -17,8 +19,8 @@
 				<img src="{{ asset('images/simbibot-icon.png') }}" width="60">
 				
 			</div>
-			<div class="title"><img src="{{ asset('images/simbibot-favicon.png') }}" style="width:20px; height: 20px">SimbiLearn</div>
-			<div class="timer">
+			<div class="title"><img src="{{ asset('images/simbibot-favicon.png') }}" style="width:20px; height: 20px">SimbiBot</div>
+			<div id="counter" class="timer">
 				<p>Time</p>
 			</div>
 		</div>
@@ -57,6 +59,7 @@
 {{-- <script src="{{ asset('js/chat-dialog.js') }}"></script> --}}
 <script src="{{ asset('js/axios.min.js') }}"></script>
 <script src="{{ asset('js/vue.min.js') }}"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
 <script
   src="http://code.jquery.com/jquery-3.3.1.min.js"
   integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
@@ -108,9 +111,35 @@
 			isNew,
 			additionalParameters: [],
 			hello: false,
-			userId: document.cookie.userId
+			userId: document.cookie.userId,
+			timer_started: false,
+			timeout: null
 		},
 		methods: {
+			start_timer : function(minutes) {
+				var seconds = 60;
+				var mins = minutes;
+				function tick() {
+				    //This script expects an element with an ID = "counter". You can change that to what ever you want. 
+				    var counter = document.getElementById("counter");
+				    var current_minutes = mins-1;
+				    seconds--;
+				    counter.innerHTML = current_minutes.toString() + ":" + (seconds < 10 ? "0" : "") + String(seconds);
+				    if( seconds > 0 ) {
+				        vm.timeout = setTimeout(tick, 1000);
+				    } else {
+				        if(mins > 1){
+				            vm.start_timer(mins-1);           
+				        }
+				        else{
+				            vm.newMessage = "quit test";
+				            vm.sendMessage();
+				        }
+				        
+				    }
+				}
+				tick();
+			},
 			sendMessage : function(){
 				if (this.newMessage === "" || this.newMessage === null || this.newMessage === undefined){
 					return;
@@ -139,6 +168,30 @@
 					additionalParameters: this.additionalParameters}
 					).then(function(response){
 						console.log(response);
+						messages_length = response.data.messages.length;
+						console.log("message length is " + messages_length);
+						for (let i=0; i < messages_length; i++) {
+							if (response.data.messages[i].additionalParameters['timer_action']=='start_time') {
+								if (!that.timer_started){
+									alert("timer started");
+									that.timer_started = true;
+									that.start_timer(1);
+									document.getElementById("counter").style.display = "inline";
+								}
+							}
+							else if (response.data.messages[i].additionalParameters['timer_action']=='stop_time') {
+								alert("timer stopped");
+								that.timer_started = false;
+								clearTimeout(vm.timeout);
+								document.getElementById("counter").style.display = "none";
+							}
+							else if (response.data.messages[i].additionalParameters['payment_action']=='show_payment') {
+								console.log("showing pay stack");
+								//that.show_payment(that.getCookie('userId'));
+								that.show_paystack(response.data.messages[i].additionalParameters['amount'], that.getCookie('userId'), response.data.messages[i].additionalParameters['trans_id'], response.data.messages[i].additionalParameters['user_email']);
+							}
+						}
+						
 					let messages = response.data.messages || [];
 					
 					messages.forEach(msg => {
@@ -212,6 +265,39 @@
 			        }
 			    }
 			    return "";
+			},
+			show_paystack : function(var_amount, userId, trans_id, user_email) {
+				      var handler = PaystackPop.setup({
+				      key: 'pk_test_7dfcdc2c0d8e91d525e52ee606b01e707b805b09',
+				      email: user_email,
+				      amount: var_amount*100,
+				      
+				      callback: function(myresponse){
+				          
+				        axios.post("{{ url('confirm_complete_payment') }}", {
+				          	params:{
+							    sender: userId,
+				                amount: var_amount,
+				                trans_ids: trans_id,
+							    ref_no: myresponse.reference
+							}
+						})
+				        .then(function (response){
+				          		close_web_view();
+						    	if (response.status=="200") {
+						    		//close_web_view();
+						    	}
+						}).catch(function (error) {
+						    console.log(error);
+				        });  
+						
+				      },
+				      onClose: function(){
+
+				      }
+				    });
+
+				    handler.openIframe();
 			}
 		},
 		mounted: function(){
@@ -219,7 +305,7 @@
 			if (this.isNew){
 				
 				this.messages = [{
-					text: "Hi I'm Simbi!, your tutor; I can take you through courses", type:'text', bysimbi: true}, {
+					text: "Hi I'm Simbi!, i can help you prepare for your tests", type:'text', bysimbi: true}, {
 					text: 'Say Hello for us to get started', type: 'text', bysimbi: true		
 				}];
 			}
