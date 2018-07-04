@@ -64,6 +64,7 @@
   src="http://code.jquery.com/jquery-3.3.1.min.js"
   integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
   crossorigin="anonymous"></script>
+  <script src="{{ asset('js/voice_input.js') }}"></script>
 <script>
 	$(document).ready(function(e){
 		
@@ -72,6 +73,11 @@
 		// $(".messages").animate({ scrollTop: $('.messages').prop("scrollHeight")}, 1000);
 		
 	});
+
+	
+pelumi();
+
+
 	
 	function getNext(e){
 		
@@ -188,7 +194,7 @@
 							else if (response.data.messages[i].additionalParameters['payment_action']=='show_payment') {
 								console.log("showing pay stack");
 								//that.show_payment(that.getCookie('userId'));
-								that.show_paystack(response.data.messages[i].additionalParameters['amount'], that.getCookie('userId'), response.data.messages[i].additionalParameters['trans_id'], response.data.messages[i].additionalParameters['user_email']);
+								that.show_paystack(response.data.messages[i].additionalParameters['amount'], that.getCookie('userId'), response.data.messages[i].additionalParameters['transaction_id'], response.data.messages[i].additionalParameters['user_email']);
 							}
 						}
 						
@@ -267,29 +273,47 @@
 			    return "";
 			},
 			show_paystack : function(var_amount, userId, trans_id, user_email) {
+						console.log(trans_id);
+						console.log("email is " + user_email);
 				      var handler = PaystackPop.setup({
 				      key: 'pk_test_7dfcdc2c0d8e91d525e52ee606b01e707b805b09',
 				      email: user_email,
 				      amount: var_amount*100,
 				      
 				      callback: function(myresponse){
-				          
-				        axios.post("{{ url('confirm_complete_payment') }}", {
-				          	params:{
-							    sender: userId,
-				                amount: var_amount,
-				                trans_ids: trans_id,
-							    ref_no: myresponse.reference
-							}
-						})
-				        .then(function (response){
-				          		close_web_view();
-						    	if (response.status=="200") {
-						    		//close_web_view();
+
+
+
+				      	//let that = this;
+				      	axios.post("{{ url('confirm_complete_payment') }}",
+				      		{driver: 'web',
+							userId: userId,
+							message: "__payment_successful__",
+							transaction_id: trans_id,
+							amount: var_amount,
+							ref_no: myresponse.reference,
+							additionalParameters: []}
+				      		).then(function(response){
+				      			console.log("response is paystack success is " + response);
+				      			if (response.status=="200") {
+						    		let messages = response.data.messages || [];
+						    		
+						    		messages.forEach(msg => {
+						    			let message_object = {text: msg.text, attachment: msg.attachment, type: msg.type, bysimbi: true, time: msg.time, actions: msg.actions};
+						    			vm.messages.push(message_object);
+						    			vm.storeMessage(message_object);
+						    		});
+						    		additionalParameters = [];
+						    		let $message = $($('.message_template').clone().html());
+						    		let msgs = $(".messages");
+						    		
+						    		let $msgs = $('.messages');
+						    		$msgs.animate({ scrollTop: $msgs.prop('scrollHeight') }, 2000);
 						    	}
-						}).catch(function (error) {
-						    console.log(error);
-				        });  
+				      		
+				      	}).catch(function(error){
+				      		console.log(error);
+				      	}); 
 						
 				      },
 				      onClose: function(){

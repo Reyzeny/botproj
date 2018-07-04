@@ -17,4 +17,4 @@ Route::get('/', function () {
 
 Route::match(['get', 'post'], '/backend', 'BotManController@handle');
 Route::get('/botman/tinker', 'BotManController@tinker');
-Route::match(['get', 'post'], '/confirm_complete_payment', 'PaymentOptionConversation@confirm_complete_payment');
+Route::match(['get', 'post'], '/confirm_complete_payment', 'BotManController@confirm_complete_payment');

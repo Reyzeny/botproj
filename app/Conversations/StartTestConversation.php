@@ -40,6 +40,7 @@ class StartTestConversation extends Conversation
     }
     public function set_test_id($test_id) {
         $this->test_id = $test_id;
+        
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["test_id"=>$this->test_id]);
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["test_name"=>Test::find($this->test_id)->title]);
     }

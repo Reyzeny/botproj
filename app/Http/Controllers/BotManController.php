@@ -9,6 +9,7 @@ use App\Conversations\GreetingConversation;
 use BotMan\BotMan\Middleware\ApiAi;
 use App\User;
 use App\UserData;
+use App\Transaction;
 use Illuminate\Support\Facades\DB;
 use App\Conversations\PersonalInformationConversation;
 use App\Conversations\TestNameConversation;
@@ -17,6 +18,7 @@ use App\Conversations\StartPaymentConversation;
 use App\Conversations\StartTestConversation;
 use App\Conversations\TestCompletionConversation;
 use App\Conversations\PaymentOptionConversation;
+
 
 class BotManController extends Controller
 {
@@ -27,10 +29,25 @@ class BotManController extends Controller
     {
         /*This place should be executed at first */
         $this->botman = app('botman');
+
         $user = new User();
         if (!$user->user_exists($request->userId)) {
             $user->create_user($request->userId);
         }
+
+        $this->botman->hears('__payment_successful__', function($bot) use($request){
+            $reply_array = array(
+                "Your payment is successful",
+                "Your payment has been received"
+            );
+            $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
+            $bot->reply($reply);
+            $start_test_convo = new StartTestConversation();
+            $start_test_convo->set_user_id($request->userId);
+            $start_test_convo->set_test_id(DB::table('user_datas')->where('user_id', $request->userId)->value('test_id'));
+            $start_test_convo->set_author_id(DB::table('user_datas')->where('user_id', $request->userId)->value('test_by_author_id'));
+            $bot->startConversation($start_test_convo);
+        });
         /*End of This place */
 
         $greeting_keywords = $this->get_greeting_keywords();
@@ -70,9 +87,9 @@ class BotManController extends Controller
             }
 
             if (isset($apiParameters['test_name']) && isset($apiParameters['author_name'])) {
-                  $test_selection = new TestSelectionConversation();
-                  $test_selection->set_user_id($request->userId);
-                  $test_selection->confirm_full_text_entry(strtolower($apiParameters['test_name']), strtolower($apiParameters['author_name']), $bot);
+                $test_selection = new TestSelectionConversation();
+                $test_selection->set_user_id($request->userId);
+                $test_selection->confirm_full_text_entry(strtolower($apiParameters['test_name']), strtolower($apiParameters['author_name']), $bot);
             }
             elseif (isset($apiParameters['test_name']) && !isset($apiParameters['author_name'])) {
                 $testnameconvo = new TestNameConversation();
@@ -84,18 +101,7 @@ class BotManController extends Controller
                 $testnameconvo->set_user_id($request->userId);
                 $testnameconvo->confirm_testname($apiParameters['author_name'], $bot);
             }
-            
         })->middleware($dialogflow);
-        // $this->botman->hears('author_name', function (BotMan $bot) use($request){
-        //     $extras = $bot->getMessage()->getExtras();
-        //     $apiReply = $extras['apiReply'];
-        //     $apiAction = $extras['apiAction'];
-        //     $apiIntent = $extras['apiIntent'];
-        //     $apiParameters = $extras['apiParameters'];
-            
-            
-            
-        // })->middleware($dialogflow);
         $this->botman->hears('well_being', function (BotMan $bot) use($request){
             $extras = $bot->getMessage()->getExtras();
             $apiReply = $extras['apiReply'];
@@ -214,6 +220,62 @@ class BotManController extends Controller
         );
         $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
         return $reply;
+    }
+
+    public function confirm_complete_payment(Request $request) {
+        $this->botman = app('botman');
+        Transaction::updateOrCreate(["id"=>$request->transaction_id], ["amount"=>$request->amount, "payment_ref"=>$request->ref_no, "status"=>"processed"]);
+
+        $this->botman->hears('.*', function($bot) use($request){
+            $reply_array = array(
+                "Your payment is successful",
+                "Your payment has been received"
+            );
+            $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
+            $bot->reply($reply);
+            $start_test_convo = new StartTestConversation();
+            $start_test_convo->set_user_id($request->userId);
+            $start_test_convo->set_test_id(DB::table('user_datas')->where('user_id', $request->userId)->value('test_id'));
+            $start_test_convo->set_author_id(DB::table('user_datas')->where('user_id', $request->userId)->value('test_by_author_id'));
+            $bot->startConversation($start_test_convo);
+        });
+        
+        
+        //$payment_option_convo = new PaymentOptionConversation();
+        //$payment_option_convo->set_user_id($request->userId);
+        //$payment_option_convo->confirm_complete_payment($request->userId, $this->botman);
+        
+
+        $this->botman->listen();
+
+        // $successful_reply_array = array(
+        //     "Your transaction is successful"
+        // );
+        // $reply = $successful_reply_array[rand(0, sizeof($successful_reply_array)-1)];
+        // $this->botman->say($reply, $request->userId, 'web');
+        // $this->botman->listen();
+
+
+        // $start_test_convo = new StartTestConversation();
+        // $start_test_convo->set_user_id($request->userId);
+        // $start_test_convo->set_test_id(DB::table('user_datas')->where('user_id', $request->userId)->value('test_id'));
+        // $start_test_convo->set_author_id(DB::table('user_datas')->where('user_id', $request->userId)->value('test_by_author_id'));
+        // $this->botman->startConversation($start_test_convo);
+         
+
+
+        // $this->botman->hears('.*', function($bot) use($request){
+        //     $this->bot = $bot;
+        //     Transaction::updateOrCreate(["id"=>$request->transaction_id], ["amount"=>$request->amount, "payment_ref"=>$request->ref_no, "status"=>"processed"]);
+        //     $this->bot->reply("Your transaction is successful");
+        //     $start_test_convo = new StartTestConversation();
+        //     $start_test_convo->set_user_id($request->userId);
+        //     $start_test_convo->set_test_id(DB::table('user_datas')->where('user_id', $request->userId)->value('test_id'));
+        //     $start_test_convo->set_author_id(DB::table('user_datas')->where('user_id', $request->userId)->value('test_by_author_id'));
+        //     $this->bot->startConversation($start_test_convo);
+        // });
+        // $this->botman->listen(); 
+        
     }
 
    

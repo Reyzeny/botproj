@@ -33,16 +33,17 @@ class StartPaymentConversation extends Conversation
 
     public function check_for_payment() {
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"payment"]);
-        if (!$this->test_is_paid()) {
+        // if (!$this->test_is_paid()) {
 
-            $start_test_convo = new StartTestConversation();
-            $start_test_convo->set_user_id($this->user_id);
-            $start_test_convo->set_test_id($this->test_id);
-            $start_test_convo->set_author_id($this->author_id);
-            UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_start"]);
-            $this->bot->startConversation($start_test_convo);
-            return;
-        }
+        //     $start_test_convo = new StartTestConversation();
+        //     $start_test_convo->set_user_id($this->user_id);
+        //     $start_test_convo->set_test_id($this->test_id);
+        //     $start_test_convo->set_author_id($this->author_id);
+        //     UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_start"]);
+        //     $this->bot->startConversation($start_test_convo);
+        //     return;
+        // }
+        
         if ($this->test_is_paid() && !$this->transaction_available($this->user_id)) {
             //var_dump(Test::find($this->test_id));
             $test_cost = Test::find($this->test_id)->first()->amount;
@@ -53,7 +54,14 @@ class StartPaymentConversation extends Conversation
             $this->bot->reply($question);
             return;
         }
+
         
+        $start_test_convo = new StartTestConversation();
+        $start_test_convo->set_user_id($this->user_id);
+        $start_test_convo->set_test_id($this->test_id);
+        $start_test_convo->set_author_id($this->author_id);
+        //UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_start"]);
+        $this->bot->startConversation($start_test_convo);
     }
 
     public function confirm_payment($user_id, $bot, $response) {
@@ -77,7 +85,7 @@ class StartPaymentConversation extends Conversation
     }
 
     public function test_is_paid() {
-        return Test::find($this->test_id)->paid == 'yes';
+        return Test::find($this->test_id)->first()->paid == 'yes';
     }
 
     public function transaction_available($user_id) {
@@ -86,10 +94,11 @@ class StartPaymentConversation extends Conversation
         $this->author_id = UserData::where('user_id', $this->user_id)->pluck('test_by_author_id');
         //echo "test id is ".$this->test_id;
         //echo "author id is ".$this->author_id;
-        $status = Transaction::where('user_id', $this->user_id)
-                    ->where('test_id', $this->test_id)
-                    ->where('author_id', $this->author_id)
-                    ->pluck('status');
+        // $status = Transaction::where('user_id', $this->user_id)
+        //             ->where('test_id', $this->test_id)
+        //             ->where('author_id', $this->author_id)
+        //             ->pluck('status');
+        $status = DB::table('transactions')->where(["user_id"=>$this->user_id, "test_id"=>$this->test_id, "author_id"=>$this->author_id])->orderBy('id', 'desc')->value('status');
         return $status!=null && !empty($status) && $status=='processed';
     }
 

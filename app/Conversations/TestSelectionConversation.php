@@ -45,6 +45,7 @@ class TestSelectionConversation extends Conversation
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_selection"]);
         $data = $this->analyze_text($selection);
         $startPaymentConvo = new StartPaymentConversation();
+        echo "in test selection setting, test id is ".$data['test_id'];
         $startPaymentConvo->set_user_id($this->user_id);
         $startPaymentConvo->set_test_id($data['test_id']);
         $startPaymentConvo->set_author_id($data['author_id']);
@@ -112,6 +113,8 @@ class TestSelectionConversation extends Conversation
                 break;
             }
         }
+        echo "analyste text";
+        print_r($result);
         return $data;
     }
 
