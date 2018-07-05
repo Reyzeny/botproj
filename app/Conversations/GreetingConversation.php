@@ -10,6 +10,7 @@ use BotMan\BotMan\Messages\Conversations\Conversation;
 use App\Http\Controllers\BotManController;
 use App\User;
 use App\UserData;
+use App\SimbiReply;
 
 class GreetingConversation extends Conversation
 {
@@ -30,7 +31,7 @@ class GreetingConversation extends Conversation
         );
         $greeting = $greeting_array[rand(0, sizeof($greeting_array)-1)];
         // $this->bot->typesAndWaits(2);
-        $this->bot->reply("{$greeting} {$name}");
+        SimbiReply::reply($this->bot, $this->user_id, "{$greeting} {$name}");
         $pic = new PersonalInformationConversation();
         $pic->set_user_id($this->user_id);
         $this->bot->startConversation($pic);

@@ -11,6 +11,7 @@ use App\User;
 use App\UserData;
 use App\Http\Controllers\BotManController;
 use Illuminate\Http\Request;
+use App\SimbiReply;
 
 class PersonalInformationConversation extends Conversation
 {
@@ -38,7 +39,7 @@ class PersonalInformationConversation extends Conversation
                 "Let me get to you know, we could have met before😁"
             );
             $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
-            $this->bot->reply($reply);
+            SimbiReply::reply($this->bot, $this->user_id, $reply);
             $this->askForEmail();
             
 
@@ -48,18 +49,18 @@ class PersonalInformationConversation extends Conversation
         }
         else if (!$user->email_exists($this->user_id)) {
             $reply = "Dear friend, i haven't known you pretty well. Let me know you better";
-            $this->say($reply);
+            SimbiReply::reply($this->bot, $this->user_id, $reply);
             $this->askForEmail();
         }
         else if (!$user->firstname_exists($this->user_id)) {
             $reply = "Dear friend, i haven't known you pretty well. Let me know you better";
-            $this->say($reply);
+            SimbiReply::reply($this->bot, $this->user_id, $reply);
             $this->askForFirstname();
             
         }
         else if (!$user->lastname_exists($this->user_id)) {
             $reply = "Dear friend, i haven't known you pretty well. Let me know you better";
-            $this->say($reply);
+            SimbiReply::reply($this->bot, $this->user_id, $reply);
             $this->askForLastname();
             UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"lastname"]);
         }
@@ -91,7 +92,7 @@ class PersonalInformationConversation extends Conversation
     public function request_mail() {
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"email"]);
         $question = $this->get_email_question();
-        $this->ask($question, function(Answer $answer) {
+        SimbiReply::ask($this, $this->user_id, $question, function(Answer $answer) {
                 $this->confirm_email($answer, $this->bot);
         });
     }
@@ -101,7 +102,7 @@ class PersonalInformationConversation extends Conversation
         $this->bot = $bot;
         if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
             User::updateOrCreate(["user_id"=>$this->user_id], ["email"=>$email]);
-            $this->say('Okay');
+            SimbiReply::reply($this->bot, $this->user_id, 'Okay');
             $this->askForFirstname();
             return true;
         }
@@ -135,7 +136,7 @@ class PersonalInformationConversation extends Conversation
         $user = new User();
         if (!$user->firstname_exists($this->user_id)) {
             $question = $this->get_firstname_question();
-            $this->say($question);
+            SimbiReply::reply($this->bot, $this->user_id, $question);
             return;
         }
         $this->askForLastname();
@@ -144,7 +145,7 @@ class PersonalInformationConversation extends Conversation
          UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"firstname"]);
         $this->bot = $bot;
         User::updateOrCreate(["user_id"=>$this->user_id], ["firstname"=>$name]);
-        $this->say('Cool');
+        SimbiReply::reply($this->bot, $this->user_id, 'Cool');
         $this->askForLastname();
     }
 
@@ -154,7 +155,7 @@ class PersonalInformationConversation extends Conversation
         $user = new User();
         if (!$user->lastname_exists($this->user_id)) {
             $question = $this->get_lastname_question();
-            $this->say($question);
+            SimbiReply::reply($this->bot, $this->user_id, $question);
             return;
         }
         $test_name_convo = new TestNameConversation();
@@ -165,7 +166,7 @@ class PersonalInformationConversation extends Conversation
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"lastname"]);
         $this->bot = $bot;
         User::updateOrCreate(["user_id"=>$this->user_id], ["lastname"=>$name]);
-        $this->say('Noted');
+        SimbiReply::reply($this->bot, $this->user_id, 'Noted');
         $test_name_convo = new TestNameConversation();
         $test_name_convo->set_user_id($this->user_id);
         $this->bot->startConversation($test_name_convo);

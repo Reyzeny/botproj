@@ -10,6 +10,8 @@ use BotMan\BotMan\Messages\Conversations\Conversation;
 use App\UserData;
 use App\Test;
 use Illuminate\Support\Facades\DB;
+use App\SimbiReply;
+use App\Http\Controllers\BotManController;
 
 class TestCompletionConversation extends Conversation
 {
@@ -48,7 +50,7 @@ class TestCompletionConversation extends Conversation
                         ->callbackId(4)
                         ->addButtons($button_array);
 
-        $this->say($question); 
+        SimbiReply::reply($this->bot, $this->user_id, $question); 
     }
 
     public function test_completion_response($response, $bot) {
@@ -63,15 +65,18 @@ class TestCompletionConversation extends Conversation
         }
         elseif (preg_match("[another test]", strtolower($response))) {
             $test_name_convo = new TestNameConversation();
-            $test_name_convo->set_user_id = $this->user_id;
+            $test_name_convo->set_user_id($this->user_id);
             $this->bot->startConversation($test_name_convo);
         }
         elseif (preg_match("[nothing]", strtolower($response))) {
-            $this->bot->reply("Alright. Buzz me whenever you are interested again");
+            SimbiReply::reply($this->bot, $this->user_id, "Alright. Buzz me whenever you are interested again");
+        }
+        else{
+            BotManController::fallback_reply($bot, $this->user_id);
         }
     }
 
-    public function get_button_type($exam_type="post_utme") {
+    public function get_button_type() {
         
         $button_array = [
                 Button::create('Try again')->value('Try again'),

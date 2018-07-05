@@ -19,6 +19,9 @@ use App\Test;
 use App\UserData;
 use App\User;
 use App\Author;
+use App\SimbiReply;
+use App\Http\Controllers\BotManController;
+
 
 class StartTestConversation extends Conversation
 {
@@ -71,17 +74,21 @@ class StartTestConversation extends Conversation
             ->addButtons([
                 Button::create('Start')->value('Start')
         ]);
-        $this->say($question);
+        SimbiReply::reply($this->bot, $this->user_id, $question);
     }
 
-    public function startTest($bot) {
-        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_start"]);
-        $this->bot = $bot;
-        $this->test_id = DB::table('user_datas')->where('user_id', $this->user_id)->value('test_id');
-        $this->author_id = DB::table('user_datas')->where('user_id', $this->user_id)->value('test_by_author_id');
-        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_on"]);
-        $this->loadQuestions();
-        $this->displayQuestion();
+    public function startTest($response, $bot) {
+        if (preg_match("[start]", strtolower($response))) {
+            UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_start"]);
+            $this->bot = $bot;
+            $this->test_id = DB::table('user_datas')->where('user_id', $this->user_id)->value('test_id');
+            $this->author_id = DB::table('user_datas')->where('user_id', $this->user_id)->value('test_by_author_id');
+            UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_on"]);
+            $this->loadQuestions();
+            $this->displayQuestion();
+            return;
+        }
+        BotManController::fallback_reply($bot, $this->user_id);
     }
 
     public function loadQuestions() {
@@ -98,6 +105,7 @@ class StartTestConversation extends Conversation
     }
 
     public function displayQuestion($count=0, $score=0) {
+        $test_time = DB::table('tests')->where('id', $this->test_id)->value('duration');
 
         if ($count < sizeof($this->questions_array)) {
             $option_button_array = $this->get_option_button_array($this->options_array[$count]);
@@ -106,7 +114,7 @@ class StartTestConversation extends Conversation
                 ->callbackId(4)
                 ->addButtons($option_button_array);
 
-            $this->ask($question, function(Answer $answer) use($count, $score){
+            SimbiReply::ask($this, $this->user_id, $question, function(Answer $answer) use($count, $score){
                 if (strtolower($answer)=='quit test') {
                     $this->proceedOnTestFinished($score);
                     return;
@@ -115,15 +123,15 @@ class StartTestConversation extends Conversation
                     $this->user_selected_answer[$count] = $answer->getText();
                     UserData::updateOrCreate(["user_id"=>$this->user_id], ["user_selected_answers"=>serialize($this->user_selected_answer)]);
                     $score = $this->verifyAnswer($count, $score);
-                    $this->say("Ok");
+                    SimbiReply::reply($this->bot, $this->user_id, "Ok");
                     $count++;
                     $this->displayQuestion($count, $score);
                     return;    
                 }
-                $this->say("Don't type the answer, select from the options");
+                SimbiReply::reply($this->bot, $this->user_id, "Don't type the answer, select from the options");
                 $this->displayQuestion($count);
                 
-            }, ['timer_action'=>'start_time']);    
+            }, ['timer_action'=>'start_time', 'test_time'=>$test_time]);    
         }
         else {
             $this->proceedOnTestFinished($score);
@@ -184,12 +192,12 @@ class StartTestConversation extends Conversation
                             Button::create('Proceed')->value('Proceed')
                         ]);
 
-        $this->say($question, ['timer_action'=>'stop_time']); 
+        SimbiReply::reply($this->bot, $this->user_id, $question, ['timer_action'=>'stop_time']); 
     }
 
     public function confirm_test_finished_response($response, $bot){
         $this->bot = $bot;
-        if (preg_match("[view corrections]", strtolower($response))) {
+        if (preg_match("[view corrections|corrections]", strtolower($response))) {
             $this->questions_array = unserialize(DB::table('user_datas')->where('user_id', $this->user_id)->value('question'));
             $this->options = unserialize(DB::table('user_datas')->where('user_id', $this->user_id)->value('options'));
             $this->answers_array = unserialize(DB::table('user_datas')->where('user_id', $this->user_id)->value('question_answers'));
@@ -206,7 +214,7 @@ class StartTestConversation extends Conversation
             $this->bot->startConversation($test_completion_convo);
         }
         else{
-            $this->bot->reply("Type 'end' to end the session");
+            SimbiReply::reply($this->bot, $this->user_id, "Type 'end' to end the session");
         }
     }
 
@@ -238,7 +246,7 @@ class StartTestConversation extends Conversation
                         Button::create('End')->value('end')
                     ]);
 
-                $this->ask($question, [
+                SimbiReply::ask($this, $this->user_id, $question, [
                     [
                         'pattern' => 'more',
                         'callback' => function () use($pagecount) {
@@ -255,7 +263,7 @@ class StartTestConversation extends Conversation
             }
             return;
         }
-        $this->say('That\'s the end actually');
+        SimbiReply::reply($this->bot, $this->user_id, 'That\'s the end actually');
         $this->confirm_test_finished_response("proceed", $this->bot);
     }
 

@@ -3,19 +3,20 @@
 }
 
 body {
-  background-color: white !important;
+  background-image: url('../images/simbibot_bg.jpg') !important;
+  background-size: cover;
   
   /*font-family: "Helvetica Neue", "Roboto", Helvetica, Arial, ;*/
   font-family: "Montserrat",sans-serif;
 }
 
 .chat_window {
-  background-image: url('../images/simbibot_bg.jpg');
   
-  background-size: contain;
+  background-color: white ;
+  
   position: absolute;
-  width: 100%;
-  max-width: 100%;
+  width: calc(100% - 20px);
+  max-width: 800px;
   /*height: 500px;*/
   height: 99%;
   border-radius: 2px;
@@ -23,7 +24,7 @@ body {
   top: 50%;
   transform: translateX(-50%) translateY(-50%);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-  background-color: #E3F2FD;
+  
   overflow: hidden;
 }
 
@@ -98,7 +99,7 @@ body {
   float: left;
 }
 .messages .message.left .text_wrapper {
-  background-color: #FFFFFF;
+  background-color: gray;
   margin-left: 20px;
   
 }
@@ -107,7 +108,7 @@ body {
   border-right-color: #808080;
 }
 .messages .message.left .text {
-  color: black;
+  color: white;
   display: inline-block;
 }
 .messages .message.right .avatar {
@@ -115,7 +116,7 @@ body {
   float: right;
 }
 .messages .message.right .text_wrapper {
-  background-color: #C8FFF4;
+  background-color: #36BFE9;
   margin-right: 20px;
   float: right;
 }
@@ -124,7 +125,7 @@ body {
   border-left-color: #36BFE9;
 }*/
 .messages .message.right .text {
-  color: black;
+  color: white;
 }
 .messages .message.appeared {
   opacity: 1;
@@ -148,7 +149,7 @@ body {
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 0px;
   position: relative;
-  box-shadow: 3px 3px 5px #4AC4EA;
+  
   margin-bottom: 10px;
 }
 /*.messages .message .text_wrapper::after, .messages .message .text_wrapper:before {
@@ -184,19 +185,18 @@ body {
   position: relative;
   width: 100%;
   background-color: #fff;
-  padding: 10px 10px;
+  padding: 5px 5px;
   position: absolute;
   bottom: 0;
 }
 .bottom_wrapper .message_input_wrapper {
   display: inline-block;
   height: 50px;
-  
   border: 1px solid #bcbdc0;
   border-top-color: transparent;
   border-right-color: transparent;
   border-left-color: transparent;
-  width: calc(100% - 160px);
+  width: calc(100% - 200px);
   position: relative;
 }
 .bottom_wrapper .message_input_wrapper .message_input {
@@ -223,9 +223,37 @@ body {
   margin-right: 50px;
   margin-top: 10px;
 }
+.bottom_wrapper .voice_record {
+  box-sizing: content-box !important;
+  background-image: url('../images/microphone-inactive.png');
+  background-size: cover;
+  width: 30px;
+  height: 30px;
+  display: inline-block;
+  border-radius: 5px;
+  background-color: #fff;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  margin-right: 10px;
+  margin-left: 10px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s linear;
+  text-align: center;
+  float: left;
+}
+
 .bottom_wrapper .send_message:hover {
   color: #a3d063;
   background-color: #fff;
+}
+
+.bottom_wrapper .send_message:focus {
+  border-bottom-color: red;
+}
+
+.bottom_wrapper .voice_record:hover{
+  background-image: url('../images/microphone-active.png');
 }
 
 .bottom_wrapper .send_message .text {

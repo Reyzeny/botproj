@@ -17,7 +17,7 @@ class CreateAnswersTable extends Migration
             $table->increments('id');
             $table->integer('q_id');
             $table->integer('option_id');
-            $table->string('option_text');
+            $table->text('option_text');
             $table->timestamps();
         });
     }

@@ -12,6 +12,8 @@ use App\UserData;
 use App\User;
 use App\Transaction;
 use Illuminate\Support\Facades\DB;
+use App\SimbiReply;
+use App\Http\Controllers\BotManController;
 
 class StartPaymentConversation extends Conversation
 {
@@ -32,26 +34,20 @@ class StartPaymentConversation extends Conversation
     
 
     public function check_for_payment() {
-        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"payment"]);
-        // if (!$this->test_is_paid()) {
-
-        //     $start_test_convo = new StartTestConversation();
-        //     $start_test_convo->set_user_id($this->user_id);
-        //     $start_test_convo->set_test_id($this->test_id);
-        //     $start_test_convo->set_author_id($this->author_id);
-        //     UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_start"]);
-        //     $this->bot->startConversation($start_test_convo);
-        //     return;
-        // }
-        
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"payment"]); 
         if ($this->test_is_paid() && !$this->transaction_available($this->user_id)) {
             //var_dump(Test::find($this->test_id));
             $test_cost = Test::find($this->test_id)->first()->amount;
-            $question = Question::create('This test is a paid test and it costs '.$test_cost.', would you like continue with payment?')
+            $question_array = array(
+                'This test is a paid test and it costs '.$test_cost.', would you like continue with payment?'
+                'It costs '.$test_cost.' to take this test, would you like to proceed with payment?'
+            );
+            $question_text = $question_array[rand(0, sizeof($question_array)-1)];
+            $question = Question::create($question_text)
             ->fallback('Unable to create a new database')
             ->callbackId('create_database')
             ->addButtons([Button::create('Yes')->value('Yes'), Button::create('No')->value('No')]);
-            $this->bot->reply($question);
+            SimbiReply::reply($this->bot, $this->user_id, $question);
             return;
         }
 
@@ -60,7 +56,6 @@ class StartPaymentConversation extends Conversation
         $start_test_convo->set_user_id($this->user_id);
         $start_test_convo->set_test_id($this->test_id);
         $start_test_convo->set_author_id($this->author_id);
-        //UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_start"]);
         $this->bot->startConversation($start_test_convo);
     }
 
@@ -68,7 +63,7 @@ class StartPaymentConversation extends Conversation
         $this->bot = $bot;
         $this->test_id = DB::table('user_datas')->where('user_id', $user_id)->value('test_id');
         $this->author_id = DB::table('user_datas')->where('user_id', $user_id)->value('test_by_author_id');
-        if (preg_match("[yes]", strtolower($response))) {
+        if (preg_match("[yes|yea|yep]", strtolower($response))) {
             $id = DB::table('transactions')->insertGetId([ 'email'=>DB::table('users')->where('user_id', $user_id)->value('email'), 'user_id' => $this->user_id, 'test_id' => $this->test_id, 'author_id'=>$this->author_id]);
 
             $payment_option_convo = new PaymentOptionConversation();
@@ -76,12 +71,13 @@ class StartPaymentConversation extends Conversation
             $bot->startConversation($payment_option_convo);
             return;
         }
-        if (preg_match("[no]", strtolower($response))) {
+        if (preg_match("[no|nop|nah]", strtolower($response))) {
             $test_name_convo = new TestNameConversation();
             $test_name_convo->set_user_id($this->user_id);
             $this->bot->startConversation($test_name_convo);
             return;
         }
+        BotManController::fallback_reply($bot, $this->user_id);
     }
 
     public function test_is_paid() {
@@ -90,14 +86,8 @@ class StartPaymentConversation extends Conversation
 
     public function transaction_available($user_id) {
         $this->user_id = $user_id;
-        $this->test_id = UserData::where('user_id', $this->user_id)->pluck('test_id');
-        $this->author_id = UserData::where('user_id', $this->user_id)->pluck('test_by_author_id');
-        //echo "test id is ".$this->test_id;
-        //echo "author id is ".$this->author_id;
-        // $status = Transaction::where('user_id', $this->user_id)
-        //             ->where('test_id', $this->test_id)
-        //             ->where('author_id', $this->author_id)
-        //             ->pluck('status');
+        $this->test_id = UserData::where('user_id', $this->user_id)->value('test_id');
+        $this->author_id = UserData::where('user_id', $this->user_id)->value('test_by_author_id');
         $status = DB::table('transactions')->where(["user_id"=>$this->user_id, "test_id"=>$this->test_id, "author_id"=>$this->author_id])->orderBy('id', 'desc')->value('status');
         return $status!=null && !empty($status) && $status=='processed';
     }

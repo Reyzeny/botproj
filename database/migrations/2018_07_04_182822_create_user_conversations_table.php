@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateAuthorsTable extends Migration
+class CreateUserConversationsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,12 @@ class CreateAuthorsTable extends Migration
      */
     public function up()
     {
-        Schema::create('authors', function (Blueprint $table) {
+        Schema::create('user_conversations', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('email')->unique();
-            $table->text('author_name');
-            $table->text('password');
+            $table->string('user_id');
+            $table->text('user_name')->nullable();
+            $table->text('message');
+            $table->text('simbi_response')->nullable();
             $table->timestamps();
         });
     }
@@ -29,6 +30,6 @@ class CreateAuthorsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('authors');
+        Schema::dropIfExists('user_conversations');
     }
 }

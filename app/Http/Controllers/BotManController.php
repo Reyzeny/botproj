@@ -18,6 +18,8 @@ use App\Conversations\StartPaymentConversation;
 use App\Conversations\StartTestConversation;
 use App\Conversations\TestCompletionConversation;
 use App\Conversations\PaymentOptionConversation;
+use App\UserConversation;
+use App\SimbiReply;
 
 
 class BotManController extends Controller
@@ -28,8 +30,13 @@ class BotManController extends Controller
     public function handle(Request $request)
     {
         /*This place should be executed at first */
-        $this->botman = app('botman');
+        $fname = DB::table('users')->where('user_id', $request->userId)->value('firstname');
+        $lname = DB::table('users')->where('user_id', $request->userId)->value('lastname');
+        $full_name =  $fname." ".$lname;
+        UserConversation::create(["user_id"=>$request->userId, "user_name"=>$full_name, "message"=>$request->message]);
 
+
+        $this->botman = app('botman');
         $user = new User();
         if (!$user->user_exists($request->userId)) {
             $user->create_user($request->userId);
@@ -41,7 +48,7 @@ class BotManController extends Controller
                 "Your payment has been received"
             );
             $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
-            $bot->reply($reply);
+            SimbiReply::reply($bot, $request->userId, $reply);
             $start_test_convo = new StartTestConversation();
             $start_test_convo->set_user_id($request->userId);
             $start_test_convo->set_test_id(DB::table('user_datas')->where('user_id', $request->userId)->value('test_id'));
@@ -86,17 +93,17 @@ class BotManController extends Controller
                 return;
             }
 
-            if (isset($apiParameters['test_name']) && isset($apiParameters['author_name'])) {
+            if (!empty($apiParameters['test_name']) && !empty($apiParameters['author_name'])) {
                 $test_selection = new TestSelectionConversation();
                 $test_selection->set_user_id($request->userId);
                 $test_selection->confirm_full_text_entry(strtolower($apiParameters['test_name']), strtolower($apiParameters['author_name']), $bot);
             }
-            elseif (isset($apiParameters['test_name']) && !isset($apiParameters['author_name'])) {
+            elseif (!empty($apiParameters['test_name']) && empty($apiParameters['author_name'])) {
                 $testnameconvo = new TestNameConversation();
                 $testnameconvo->set_user_id($request->userId);
                 $testnameconvo->confirm_testname($apiParameters['test_name'], $bot);    
             }
-            elseif (!isset($apiParameters['test_name']) && isset($apiParameters['author_name'])) {
+            elseif (empty($apiParameters['test_name']) && !empty($apiParameters['author_name'])) {
                 $testnameconvo = new TestNameConversation();
                 $testnameconvo->set_user_id($request->userId);
                 $testnameconvo->confirm_testname($apiParameters['author_name'], $bot);
@@ -105,7 +112,7 @@ class BotManController extends Controller
         $this->botman->hears('well_being', function (BotMan $bot) use($request){
             $extras = $bot->getMessage()->getExtras();
             $apiReply = $extras['apiReply'];
-            $bot->reply($apiReply);
+            SimbiReply::reply($bot, $request->userId, $apiReply);
             $pic = new PersonalInformationConversation();
             $pic->set_user_id($request->userId);
             $bot->startConversation($pic); 
@@ -113,18 +120,85 @@ class BotManController extends Controller
         $this->botman->hears('name_question', function (BotMan $bot) use($request){
             $extras = $bot->getMessage()->getExtras();
             $apiReply = $extras['apiReply'];
-            $bot->reply($apiReply); 
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
         })->middleware($dialogflow);
         $this->botman->hears('matches_lovely_question', function (BotMan $bot) use($request){
             $extras = $bot->getMessage()->getExtras();
             $apiReply = $extras['apiReply'];
-            $bot->reply($apiReply); 
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
         })->middleware($dialogflow);
         $this->botman->hears('unsure_action', function (BotMan $bot) use($request){
             $extras = $bot->getMessage()->getExtras();
             $apiReply = $extras['apiReply'];
-            $bot->reply($apiReply); 
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
         })->middleware($dialogflow);
+        $this->botman->hears('end_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('hard_question_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('cool_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('simbi_ability_question', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('creation_reason_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('simbi_interactive_question_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('creation_question_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('whatsapp_question_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('friend_question_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('residence_question_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('abusive_statement_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('lovely_statement_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+        $this->botman->hears('lovely_question_action', function (BotMan $bot) use($request){
+            $extras = $bot->getMessage()->getExtras();
+            $apiReply = $extras['apiReply'];
+            SimbiReply::reply($bot, $request->userId, $apiReply); 
+        })->middleware($dialogflow);
+
+
 
 
 
@@ -213,14 +287,59 @@ class BotManController extends Controller
         $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
         return $reply;
     }
+
     public static function get_random_testtitle_fallback_reply() {
         $reply_array = array(
             "I don't know that test. Probably try something else",
-            "I don't have that as a test "
+            "I don't think i have that as a test, try something different",
+            "Could not find anything related to that, say it in another way"
         );
         $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
         return $reply;
     }
+
+    public static function get_random_payment_fallback_reply() {
+        $reply_array = array(
+            "I don't get that, would you like to proceed with payment?",
+            "I would like to know if you want to proceed with payment?",
+            "Should we proceed to payment?"
+        );
+        $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
+        return $reply;
+    }
+
+    public static function get_random_payment_option_fallback_reply() {
+        $reply_array = array(
+            "Sorry i couldn't understand that, would you like to Pay Online or By Bank Transfer",
+            "I didn't get you, would you Pay Online or through Bank Transfer",
+            "How do you want to proceed, Online payment or Bank Transfer?"
+        );
+        $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
+        return $reply;
+    }
+
+    public static function get_random_start_fallback_reply() {
+        $reply_array = array(
+            "Sorry what do you mean? You could just start the test by sending 'start'",
+            "I don't understand. You can start the test by sending 'start'",
+            "Sorry i couldn't understand you, type 'start' to begin the test"
+        );
+        $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
+        return $reply;
+    }
+
+    public static function get_random_testcompleted_fallback_reply() {
+        $reply_array = array(
+            "Sorry what do you mean? Would you like to Try again, Take another test or do nothing?",
+            "I don't understand. What will you like to do now?",
+            "Sorry i couldn't understand you, What will you like to do now?"
+        );
+        $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
+        return $reply;
+    }
+
+
+
 
     public function confirm_complete_payment(Request $request) {
         $this->botman = app('botman');
@@ -232,7 +351,7 @@ class BotManController extends Controller
                 "Your payment has been received"
             );
             $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
-            $bot->reply($reply);
+            SimbiReply::reply($bot, $request->userId, $reply);
             $start_test_convo = new StartTestConversation();
             $start_test_convo->set_user_id($request->userId);
             $start_test_convo->set_test_id(DB::table('user_datas')->where('user_id', $request->userId)->value('test_id'));
@@ -294,7 +413,7 @@ class BotManController extends Controller
                 return;
             }
             $reply = self::get_random_email_fallback_reply();
-            $bot->reply($reply);
+            SimbiReply::reply($bot, $user_id, $reply);
             
         }
         else if ($context=='firstname') {
@@ -321,7 +440,7 @@ class BotManController extends Controller
                 return;
             }
             $reply = self::get_random_testtitle_fallback_reply();
-            $bot->reply($reply);
+            SimbiReply::reply($bot, $user_id, $reply);
         }
         else if ($context=='test_selection') {
             if (!empty($unknown_word)) {
@@ -332,7 +451,7 @@ class BotManController extends Controller
                 return;
             }
             $reply = self::get_random_testtitle_fallback_reply();
-            $bot->reply($reply);
+            SimbiReply::reply($bot, $user_id, $reply);
         }
         else if ($context=='payment') {
             if (!empty($unknown_word)) {
@@ -341,8 +460,8 @@ class BotManController extends Controller
                 $StartPaymentConversation->confirm_payment($user_id, $bot, $unknown_word);
                 return;
             }
-            $reply = self::get_random_testtitle_fallback_reply();
-            $bot->reply($reply);
+            $reply = self::get_random_payment_fallback_reply();
+            SimbiReply::reply($bot, $user_id, $reply);
         }
         else if ($context=='payment_option') {
             if (!empty($unknown_word)) {
@@ -351,20 +470,18 @@ class BotManController extends Controller
                 $payment_option_convo->confirm_payment_option($user_id, $bot, $unknown_word);
                 return;
             }
-            $reply = self::get_random_testtitle_fallback_reply();
-            $bot->reply($reply);
+            $reply = self::get_random_payment_option_fallback_reply();
+            SimbiReply::reply($bot, $user_id, $reply);
         }
         else if ($context=='test_start') {
             if (!empty($unknown_word)) {
-                if ($unknown_word=='start') {
-                    $start_test_convo = new StartTestConversation();
-                    $start_test_convo->set_user_id($user_id);
-                    $start_test_convo->startTest($bot);
-
-                }
+                $start_test_convo = new StartTestConversation();
+                $start_test_convo->set_user_id($user_id);
+                $start_test_convo->startTest($bot);
                 return;
             }
-            
+            $reply = self::get_random_start_fallback_reply();
+            SimbiReply::reply($bot, $user_id, $reply);
         }
         else if ($context=='test_finished') {
             if (!empty($unknown_word)) {
@@ -383,13 +500,13 @@ class BotManController extends Controller
                 $test_completion_conv->test_completion_response($unknown_word, $bot);
                 return;
             }
-            //$reply = self::get_random_testtitle_fallback_reply();
-            //$bot->reply($reply);
+            $reply = self::get_random_testcompleted_fallback_reply();
+            $bot->reply($reply);
         }
         else
         {
             $reply = self::get_random_fallback_reply();
-            $bot->reply($reply);
+            SimbiReply::reply($bot, $user_id, $reply);
         }
     }
 }

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use App\Test;
 use App\UserData;
 use App\Http\Controllers\BotManController;
+use App\SimbiReply;
 
 class TestNameConversation extends Conversation
 {
@@ -29,49 +30,47 @@ class TestNameConversation extends Conversation
     public function askTestName() {
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
         $question = $this->get_what_test();
-        $this->say($question);
+        //$this->bot->reply($question);
+        SimbiReply::reply($this->bot, $this->user_id, $question);
     }
     public function confirm_testname($test_title, $bot) {
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
         $this->bot = $bot;
         $test = $this->get_available_test();
-        if (preg_match($test, $test_title)) {
-            $this->say('Alright');
+        if (preg_match($test, $test_title, $matching_test)) {
+            SimbiReply::reply($this->bot, $this->user_id, 'Alright');
             $test_selection = new TestSelectionConversation();
             $test_selection->set_user_id($this->user_id);
-            $test_selection->set_test_entered($test_title);
+            $test_selection->set_test_entered($matching_test[0]);
             UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_selection"]);
             $this->bot->startConversation($test_selection);
             return;
         }
-        // if (!$suggestion=get_closer_keyword($test_title)) {
-
-        // }
         BotManController::fallback_reply($bot, $this->user_id);
     }
-    public function confirm_authorname($author_name, $bot) {
-        UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
-        $this->bot = $bot;
-        $author_id_array = array();
-        $author_list = Author::all();
-        foreach ($author_list as $author) {
-            if ( strpos($author_list->author_name, $author_name) || strpos($author_name, $author_list->author_name) ) {
-                array_push($author_id_array, $author_list->id);
-            }
-        }
-        // if (!$suggestion=get_closer_keyword($test_title)) {
+    // public function confirm_authorname($author_name, $bot) {
+    //     UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"test_name"]);
+    //     $this->bot = $bot;
+    //     $author_id_array = array();
+    //     $author_list = Author::all();
+    //     foreach ($author_list as $author) {
+    //         if ( strpos($author_list->author_name, $author_name) || strpos($author_name, $author_list->author_name) ) {
+    //             array_push($author_id_array, $author_list->id);
+    //         }
+    //     }
+    //     // if (!$suggestion=get_closer_keyword($test_title)) {
 
-        // }
-        if (empty($author_id_array)) {
-            BotManController::fallback_reply($bot, $this->user_id); 
-            return;   
-        }
+    //     // }
+    //     if (empty($author_id_array)) {
+    //         BotManController::fallback_reply($bot, $this->user_id); 
+    //         return;   
+    //     }
 
-        $test_selection = new TestSelectionConversation();
-        $test_selection->set_user_id($this->user_id);
-        $test_selection->set_author_id_entered($author_id_array);
-        $test_selection->showAuthorSuggestion();
-    }
+    //     $test_selection = new TestSelectionConversation();
+    //     $test_selection->set_user_id($this->user_id);
+    //     $test_selection->set_author_id_entered($author_id_array);
+    //     $test_selection->showAuthorSuggestion();
+    // }
 
     public function get_what_test() {
         $test_list = Test::select('title')->distinct()->get();
@@ -121,7 +120,7 @@ class TestNameConversation extends Conversation
             $response .= $test->title."<br>";
         }
         $response .= "<br>Which would you like to take?";
-        $this->bot->reply($response);
+        SimbiReply::reply($this->bot, $this->user_id, $response);
     }
 
     /**

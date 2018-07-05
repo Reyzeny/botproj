@@ -25,9 +25,7 @@
 			</div>
 		</div>
 		<ul class="messages">
-			
 			<template v-for="message in messages">
-				
 				<li class="message appeared" :class="{ left : message.bysimbi, right : !message.bysimbi }">
 					{{-- <div class="avatar"></div> --}}
 					<div class="text_wrapper">
@@ -36,19 +34,23 @@
 				</li>
 			
 			</template>
-			
 			<div v-if="getLastMessage().type == 'actions'">
 				<center>
-					<span v-for="action in getLastMessage().actions"><button class="btn btn-default reply-button" @click="sendMessageWithButton(action.value); vm.additionalParameters.push({'interactive' : true});" style="margin-right: 15px" v-html="action.text"><!-- @{{action.text}} --></button></span>	
+					<span v-for="action in getLastMessage().actions"><button class="btn btn-default reply-button" @click="sendMessageWithButton(action.value); vm.additionalParameters.push({'interactive' : true});" style="margin-right: 15px" v-html="action.text"><!-- @{{action.text}} --></button></span>
 				</center>
-				
 			</div>	
-			
-			
 		</ul>
 		<div class="bottom_wrapper clearfix">
 			<div class="message_input_wrapper">
-				<input class="message_input" placeholder="Type your message here..." v-model="newMessage" @keyup.enter="sendMessage"/></div>
+				<input id="txt_input" class="message_input" placeholder="Type your message here..." v-model="newMessage" @keyup.enter="sendMessage"/>
+			</div>
+
+			<span>
+				<div id="btn_voice_input" class="voice_record" onclick="startButton(event);">
+					<div class="text"></div>
+				</div>
+			</span>
+			
 			<div class="send_message" @click="sendMessage">
 				<div class="icon"></div>
 				<div class="text"><i class="fa fa-send"></i></div>
@@ -64,7 +66,6 @@
   src="http://code.jquery.com/jquery-3.3.1.min.js"
   integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
   crossorigin="anonymous"></script>
-  <script src="{{ asset('js/voice_input.js') }}"></script>
 <script>
 	$(document).ready(function(e){
 		
@@ -75,7 +76,6 @@
 	});
 
 	
-pelumi();
 
 
 	
@@ -179,14 +179,12 @@ pelumi();
 						for (let i=0; i < messages_length; i++) {
 							if (response.data.messages[i].additionalParameters['timer_action']=='start_time') {
 								if (!that.timer_started){
-									alert("timer started");
 									that.timer_started = true;
-									that.start_timer(1);
+									that.start_timer(response.data.messages[i].additionalParameters['test_time']);
 									document.getElementById("counter").style.display = "inline";
 								}
 							}
 							else if (response.data.messages[i].additionalParameters['timer_action']=='stop_time') {
-								alert("timer stopped");
 								that.timer_started = false;
 								clearTimeout(vm.timeout);
 								document.getElementById("counter").style.display = "none";
@@ -329,7 +327,7 @@ pelumi();
 			if (this.isNew){
 				
 				this.messages = [{
-					text: "Hi I'm Simbi!, i can help you prepare for your tests", type:'text', bysimbi: true}, {
+					text: "Hi I'm Simbi! Your Interactive Learning Assistant", type:'text', bysimbi: true}, {
 					text: 'Say Hello for us to get started', type: 'text', bysimbi: true		
 				}];
 			}
@@ -352,5 +350,6 @@ pelumi();
 
 	})
 </script>
+<script src="{{ asset('js/voice_input.js') }}"></script>
 </body>
 </html>
