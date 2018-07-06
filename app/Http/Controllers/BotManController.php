@@ -29,8 +29,14 @@ class BotManController extends Controller
 
     public function handle(Request $request)
     {
-        /*This place should be executed at first */
+        /*This place should be executed at first, don't ever remove this part because it enables simbi to get what the user said first*/
         //echo gettype($request->message);
+        $fname = DB::table('users')->where('user_id', $request->userId)->value('firstname');
+        $lname = DB::table('users')->where('user_id', $request->userId)->value('lastname');
+        $full_name =  $fname." ".$lname;
+        UserConversation::create(["user_id"=>$request->userId, "user_name"=>$full_name, "message"=>$request->message]);
+        /* End of first execution */
+
         $this->botman = app('botman');
         $user = new User();
         if (!$user->user_exists($request->userId)) {
@@ -47,10 +53,7 @@ class BotManController extends Controller
 
         }
 
-        $fname = DB::table('users')->where('user_id', $request->userId)->value('firstname');
-        $lname = DB::table('users')->where('user_id', $request->userId)->value('lastname');
-        $full_name =  $fname." ".$lname;
-        UserConversation::create(["user_id"=>$request->userId, "user_name"=>$full_name, "message"=>$request->message]);
+        
             
 
         $this->botman->hears('__payment_successful__', function($bot) use($request){
