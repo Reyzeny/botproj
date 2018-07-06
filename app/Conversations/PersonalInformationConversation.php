@@ -103,6 +103,13 @@ class PersonalInformationConversation extends Conversation
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"email"]);
         $this->bot = $bot;
         if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            if ($this->email_exists($email)) {
+                $existing_user_id = $this->get_user_id_by_email($email);
+                setcookie("userId", $existing_user_id);
+                $this->user_id = $existing_user_id;
+                $this->check_if_user_known();
+                return true;
+            }
             User::updateOrCreate(["user_id"=>$this->user_id], ["email"=>$email]);
             SimbiReply::reply($this->bot, $this->user_id, 'Okay');
             $this->askForFirstname();
@@ -122,6 +129,15 @@ class PersonalInformationConversation extends Conversation
         ->fallback('Unable to create a new database')
         ->callbackId('create_database');
         return $question;
+    }
+
+    public function email_exists($email) {
+        return User::where(['email' => $email])->count() > 0;
+    }
+
+    public function get_user_id_by_email($email) {
+        $user_id = DB::table('users')->where('email', $email)->value('user_id');
+        return $user_id;
     }
 
 
