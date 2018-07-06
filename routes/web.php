@@ -11,9 +11,11 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Route::get('/', function () {
+//     return view('welcome');
+// });
+
+Route::get('/', 'BotManController@tinker');
 
 Route::match(['get', 'post'], '/backend', 'BotManController@handle');
 Route::get('/botman/tinker', 'BotManController@tinker');
