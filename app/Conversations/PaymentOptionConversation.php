@@ -63,7 +63,7 @@ class PaymentOptionConversation extends Conversation
                 Account number : 0117562221<br>
                 Bank            : GTB<br>
 
-                Transaction id :  ".$this->transaction_id;
+                Transaction id :  ".$this->transaction_id
             );
             $reply = $reply_array[rand(0, sizeof($reply_array)-1)];
             SimbiReply::reply($this->bot, $this->user_id, $reply);

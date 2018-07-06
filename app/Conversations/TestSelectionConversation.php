@@ -58,6 +58,7 @@ class TestSelectionConversation extends Conversation
             return;
         }
 
+        UserData::updateOrCreate(["user_id"=>$this->user_id], ["test_id"=>$data['test_id'], "test_by_author_id"=>$data['author_id']]);
         $startPaymentConvo = new StartPaymentConversation();
         $startPaymentConvo->set_user_id($this->user_id);
         $startPaymentConvo->set_test_id($data['test_id']);

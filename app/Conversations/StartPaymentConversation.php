@@ -37,9 +37,9 @@ class StartPaymentConversation extends Conversation
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"payment"]); 
         if ($this->test_is_paid() && !$this->transaction_available($this->user_id)) {
             //var_dump(Test::find($this->test_id));
-            $test_cost = Test::find($this->test_id)->first()->amount;
+            $test_cost = DB::table('tests')->where('id', $this->test_id)->value('amount');
             $question_array = array(
-                'This test is a paid test and it costs '.$test_cost.', would you like continue with payment?'
+                'This test is a paid test and it costs '.$test_cost.', would you like continue with payment?',
                 'It costs '.$test_cost.' to take this test, would you like to proceed with payment?'
             );
             $question_text = $question_array[rand(0, sizeof($question_array)-1)];
@@ -97,7 +97,6 @@ class StartPaymentConversation extends Conversation
      */
     public function run()
     {
-
         $this->check_for_payment();
     }
 }

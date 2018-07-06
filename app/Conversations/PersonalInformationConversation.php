@@ -92,10 +92,11 @@ class PersonalInformationConversation extends Conversation
     public function request_mail() {
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"email"]);
         $question = $this->get_email_question();
-        // SimbiReply::ask($this, $this->user_id, $question, function(Answer $answer) {
-        //         $this->confirm_email($answer, $this->bot);
-        // });
-         SimbiReply::reply($this->bot, $this->user_id, $question);
+        SimbiReply::ask($this, $this->user_id, $question, function(Answer $answer) {
+                $this->confirm_email($answer, $this->bot);
+        });
+
+         //SimbiReply::reply($this->bot, $this->user_id, $question);
     }
 
     public function confirm_email($email, $bot) {
@@ -116,7 +117,10 @@ class PersonalInformationConversation extends Conversation
             "Kindly enter your email address",
             "What's your email address?"
         );
-        $question = $question_array[rand(0, sizeof($question_array)-1)];
+        $question_text = $question_array[rand(0, sizeof($question_array)-1)];
+        $question = Question::create($question_text)
+        ->fallback('Unable to create a new database')
+        ->callbackId('create_database');
         return $question;
     }
 
@@ -136,7 +140,10 @@ class PersonalInformationConversation extends Conversation
         $user = new User();
         if (!$user->firstname_exists($this->user_id)) {
             $question = $this->get_firstname_question();
-            SimbiReply::reply($this->bot, $this->user_id, $question);
+            SimbiReply::ask($this, $this->user_id, $question, function(Answer $answer) {
+                    $this->confirm_firstname($answer, $this->bot);
+            });
+            //SimbiReply::reply($this->bot, $this->user_id, $question);
             return;
         }
         $this->askForLastname();
@@ -155,6 +162,9 @@ class PersonalInformationConversation extends Conversation
         $user = new User();
         if (!$user->lastname_exists($this->user_id)) {
             $question = $this->get_lastname_question();
+            SimbiReply::ask($this, $this->user_id, $question, function(Answer $answer) {
+                    $this->confirm_lastname($answer, $this->bot);
+            });
             SimbiReply::reply($this->bot, $this->user_id, $question);
             return;
         }
@@ -179,7 +189,10 @@ class PersonalInformationConversation extends Conversation
             "What is your first name?",
             "Tell me your first name?"
         );
-        $question = $question_array[rand(0, sizeof($question_array)-1)];
+        $question_text = $question_array[rand(0, sizeof($question_array)-1)];
+        $question = Question::create($question_text)
+        ->fallback('Unable to create a new database')
+        ->callbackId('create_database');
         return $question;
     }
 
@@ -188,7 +201,10 @@ class PersonalInformationConversation extends Conversation
             "What is your last name?",
             "Tell me your last name?"
         );
-        $question = $question_array[rand(0, sizeof($question_array)-1)];
+        $question_text = $question_array[rand(0, sizeof($question_array)-1)];
+        $question = Question::create($question_text)
+        ->fallback('Unable to create a new database')
+        ->callbackId('create_database');
         return $question;
     }
 

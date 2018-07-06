@@ -495,7 +495,7 @@ class BotManController extends Controller
             if (!empty($unknown_word)) {
                 $start_test_convo = new StartTestConversation();
                 $start_test_convo->set_user_id($user_id);
-                $start_test_convo->startTest($bot);
+                $start_test_convo->startTest($unknown_word, $bot);
                 return;
             }
             $reply = self::get_random_start_fallback_reply();
