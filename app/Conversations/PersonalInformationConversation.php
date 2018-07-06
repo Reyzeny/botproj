@@ -12,6 +12,7 @@ use App\UserData;
 use App\Http\Controllers\BotManController;
 use Illuminate\Http\Request;
 use App\SimbiReply;
+use Illuminate\Support\Facades\DB;
 
 class PersonalInformationConversation extends Conversation
 {
