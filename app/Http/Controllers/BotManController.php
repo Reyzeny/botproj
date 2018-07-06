@@ -35,7 +35,7 @@ class BotManController extends Controller
         $lname = DB::table('users')->where('user_id', $request->userId)->value('lastname');
         $full_name =  $fname." ".$lname;
         UserConversation::create(["user_id"=>$request->userId, "user_name"=>$full_name, "message"=>$request->message]);
-        /* End of first execution */
+        /* End of first execution here */
 
         $this->botman = app('botman');
         $user = new User();

@@ -15,9 +15,7 @@ class SimbiReply
 
 		if (gettype($reply)== "string"){
 			$simbi_text = $reply;
-			
 		}else{
-			
 			$simbi_text = $reply->getText();
 		}
 		UserConversation::updateOrCreate(["id"=>$last_convo_id], ["simbi_response"=>$simbi_text]);
