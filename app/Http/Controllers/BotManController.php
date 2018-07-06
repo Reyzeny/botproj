@@ -38,24 +38,6 @@ class BotManController extends Controller
         /* End of first execution here */
 
         $this->botman = app('botman');
-        $user = new User();
-        if (!$user->user_exists($request->userId)) {
-            $user->create_user($request->userId);
-        }
-        if (!$user->email_exists($request->userId) || !$user->firstname_exists($request->userId) || !$user->lastname_exists($request->userId)) {
-            $this->botman->hears('.*', function($bot) use($request){
-                $pic = new PersonalInformationConversation();
-                $pic->set_user_id($request->userId);
-                $bot->startConversation($pic);
-            });
-            $this->botman->listen();
-            return;
-
-        }
-
-        
-            
-
         $this->botman->hears('__payment_successful__', function($bot) use($request){
             $reply_array = array(
                 "Your payment is successful",
@@ -76,6 +58,25 @@ class BotManController extends Controller
             $this->matches_greeting($bot, $request);
         });
 
+        $user = new User();
+        if (!$user->user_exists($request->userId)) {
+            $user->create_user($request->userId);
+        }
+        if (!$user->email_exists($request->userId) || !$user->firstname_exists($request->userId) || !$user->lastname_exists($request->userId)) {
+            $this->botman->hears('.*', function($bot) use($request){
+                $pic = new PersonalInformationConversation();
+                $pic->set_user_id($request->userId);
+                $bot->startConversation($pic);
+            });
+            $this->botman->listen();
+            return;
+
+        }
+
+        
+            
+
+        
         // $this->botman->hears('my email is {mail}', function($bot, $mail) use($request){
         //     $pic = new PersonalInformationConversation();
         //     $pic->set_user_id($request->userId);
