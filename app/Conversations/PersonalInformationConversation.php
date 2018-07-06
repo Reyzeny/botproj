@@ -92,9 +92,10 @@ class PersonalInformationConversation extends Conversation
     public function request_mail() {
         UserData::updateOrCreate(["user_id"=>$this->user_id], ["context"=>"email"]);
         $question = $this->get_email_question();
-        SimbiReply::ask($this, $this->user_id, $question, function(Answer $answer) {
-                $this->confirm_email($answer, $this->bot);
-        });
+        // SimbiReply::ask($this, $this->user_id, $question, function(Answer $answer) {
+        //         $this->confirm_email($answer, $this->bot);
+        // });
+         SimbiReply::reply($this->bot, $this->user_id, $question);
     }
 
     public function confirm_email($email, $bot) {

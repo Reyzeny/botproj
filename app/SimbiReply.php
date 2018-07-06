@@ -10,9 +10,14 @@ class SimbiReply
 	public static function reply($bot, $user_id, $reply, $additionalParameters=[]) {
 		$last_convo_id = UserConversation::where('user_id', $user_id)->latest()->value('id');
 		//echo gettype($reply);
-		$simbi_text = $reply;
-		//echo $reply;
-		if (gettype($reply)!= "string"){
+		
+		//echo gettype($reply);
+
+		if (gettype($reply)== "string"){
+			$simbi_text = $reply;
+			
+		}else{
+			
 			$simbi_text = $reply->getText();
 		}
 		UserConversation::updateOrCreate(["id"=>$last_convo_id], ["simbi_response"=>$simbi_text]);

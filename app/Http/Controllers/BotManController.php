@@ -30,6 +30,7 @@ class BotManController extends Controller
     public function handle(Request $request)
     {
         /*This place should be executed at first */
+        //echo gettype($request->message);
         $fname = DB::table('users')->where('user_id', $request->userId)->value('firstname');
         $lname = DB::table('users')->where('user_id', $request->userId)->value('lastname');
         $full_name =  $fname." ".$lname;
