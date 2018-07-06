@@ -31,17 +31,27 @@ class BotManController extends Controller
     {
         /*This place should be executed at first */
         //echo gettype($request->message);
-        $fname = DB::table('users')->where('user_id', $request->userId)->value('firstname');
-        $lname = DB::table('users')->where('user_id', $request->userId)->value('lastname');
-        $full_name =  $fname." ".$lname;
-        UserConversation::create(["user_id"=>$request->userId, "user_name"=>$full_name, "message"=>$request->message]);
-
-
         $this->botman = app('botman');
         $user = new User();
         if (!$user->user_exists($request->userId)) {
             $user->create_user($request->userId);
         }
+        if (!$user->email_exists($request->userId) || !$user->firstname_exists($request->userId) || !$user->lastname_exists($request->userId)) {
+            $this->botman->hears('.*', function($bot) use($request){
+                $pic = new PersonalInformationConversation();
+                $pic->set_user_id($request->userId);
+                $bot->startConversation($pic);
+            });
+            $this->botman->listen();
+            return;
+
+        }
+
+        $fname = DB::table('users')->where('user_id', $request->userId)->value('firstname');
+        $lname = DB::table('users')->where('user_id', $request->userId)->value('lastname');
+        $full_name =  $fname." ".$lname;
+        UserConversation::create(["user_id"=>$request->userId, "user_name"=>$full_name, "message"=>$request->message]);
+            
 
         $this->botman->hears('__payment_successful__', function($bot) use($request){
             $reply_array = array(
@@ -407,14 +417,15 @@ class BotManController extends Controller
         $unknown_word==strtolower($unknown_word);
         
         if ($context=='email') {
+            $pic = new PersonalInformationConversation();
+            $pic->set_user_id($user_id);
             if (!empty($unknown_word)) {
-                $pic = new PersonalInformationConversation();
-                $pic->set_user_id($user_id);
                 $pic->confirm_email($unknown_word, $bot);
                 return;
             }
             $reply = self::get_random_email_fallback_reply();
             SimbiReply::reply($bot, $user_id, $reply);
+            $pic->request_mail();
             
         }
         else if ($context=='firstname') {

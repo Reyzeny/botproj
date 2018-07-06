@@ -107,7 +107,6 @@ class PersonalInformationConversation extends Conversation
             $this->askForFirstname();
             return true;
         }
-        $request = new Request();
         
         BotManController::fallback_reply($this->bot, $this->user_id);
     }
