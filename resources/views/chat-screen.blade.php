@@ -4,8 +4,8 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>SimbiLearn - Your intelligent lesson partner</title>
-	<link rel="stylesheet" type="text/css" href="{{ secure_asset('css/chat-dialog.css') }}">
-	<link rel="stylesheet" type="text/css" href="{{ secure_asset('css/app.css') }}">
+	<link rel="stylesheet" type="text/css" href="{{ asset('css/chat-dialog.css') }}">
+	<link rel="stylesheet" type="text/css" href="{{ asset('css/app.css') }}">
 	<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
 	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
@@ -16,10 +16,10 @@
 	<div class="chat_window" id="application">
 		<div class="top_menu">
 			<div class="buttons">
-				<img src="{{ secure_asset('images/simbibot-icon.png') }}" width="60">
+				<img src="{{ asset('images/simbibot-icon.png') }}" width="60">
 				
 			</div>
-			<div class="title"><img src="{{ secure_asset('images/simbibot-favicon.png') }}" style="width:20px; height: 20px">SimbiBot</div>
+			<div class="title"><img src="{{ asset('images/simbibot-favicon.png') }}" style="width:20px; height: 20px">SimbiBot</div>
 			<div id="counter" class="timer">
 				<p>Time</p>
 			</div>
@@ -57,10 +57,10 @@
 			</div>
 		</div>
 	</div>
-<script src="{{ secure_asset('js/app.js') }}"></script>
-{{-- <script src="{{ secure_asset('js/chat-dialog.js') }}"></script> --}}
-<script src="{{ secure_asset('js/axios.min.js') }}"></script>
-<script src="{{ secure_asset('js/vue.min.js') }}"></script>
+<script src="{{ asset('js/app.js') }}"></script>
+{{-- <script src="{{ asset('js/chat-dialog.js') }}"></script> --}}
+<script src="{{ asset('js/axios.min.js') }}"></script>
+<script src="{{ asset('js/vue.min.js') }}"></script>
 <script src="https://js.paystack.co/v1/inline.js"></script>
 <script
   src="https://code.jquery.com/jquery-3.3.1.min.js"
@@ -350,6 +350,6 @@
 
 	})
 </script>
-<script src="{{ secure_asset('js/voice_input.js') }}"></script>
+<script src="{{ asset('js/voice_input.js') }}"></script>
 </body>
 </html>
