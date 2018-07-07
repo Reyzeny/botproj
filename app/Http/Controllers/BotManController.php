@@ -431,6 +431,7 @@ class BotManController extends Controller
             }
             $reply = self::get_random_email_fallback_reply();
             SimbiReply::reply($bot, $user_id, $reply);
+            $pic->set_bot($bot);
             $pic->request_mail();
             
         }

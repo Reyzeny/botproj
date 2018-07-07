@@ -27,6 +27,9 @@ class PersonalInformationConversation extends Conversation
     public function get_user_id() {
         return $this->user_id;
     }
+    public function set_bot($bot) {
+        $this->bot = $bot;
+    }
 
 
     public function check_if_user_known() {
